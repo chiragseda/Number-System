@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Record Viewer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Record Lookup</h1>
+
+    <form id="searchForm" class="controls">
+      <input id="serialInput" type="text" placeholder="Enter Serial No." required />
+      <button type="submit">Search</button>
+    </form>
+
+    <div id="headerStrip" class="header-strip"></div>
+    <div id="result"></div>
+  </div>
+
+  <!-- MODAL -->
+  <div id="ppModal" class="modal">
+    <div class="modal-content">
+      <span id="closeModal">&times;</span>
+      <h3>Part Payments</h3>
+      <div id="ppContent"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

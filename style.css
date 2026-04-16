@@ -1,0 +1,149 @@
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #eef2ff, #f8fafc);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.container {
+  background: #ffffff;
+  padding: 26px;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(12, 40, 80, 0.08);
+  width: 100%;
+  max-width: 760px;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #d0d7de;
+}
+
+button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(180deg,#007bff,#0062d6);
+  color: #fff;
+  cursor: pointer;
+}
+
+.header-strip {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.header-pill {
+  background: #f1f6ff;
+  color: #0b5ed7;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.record-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 6px 20px rgba(12, 40, 80, 0.06);
+}
+
+.fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.field {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #eef2f7;
+}
+
+.field.important {
+  grid-column: span 2;
+  background: #f8fbff;
+}
+
+.label {
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.value {
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+.pp-btn {
+  margin-top: 6px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  background: #0b5ed7;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+}
+
+/* 🔥 MODAL FIXED */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,0.4);
+
+  /* Centering */
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+}
+
+.modal-content {
+  background: #fff;
+  width: 100%;
+  max-width: 600px;
+  border-radius: 12px;
+  padding: 20px;
+
+  max-height: 90vh;
+  overflow-y: auto;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+
+  scroll-behavior: smooth;
+}
+
+#closeModal {
+  float: right;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.pp-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+@media (max-width: 600px) {
+  .fields-grid {
+    grid-template-columns: 1fr;
+  }
+}
