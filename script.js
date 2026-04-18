@@ -5,6 +5,9 @@
 
   let cachedData = null;
 
+  let lastResult = null;
+  let lastRecord = null;
+
   const headers = [
     "Serial no.","Date","Name","City","Item","Amount",
     "ਖਾਲਸ ਸੋਨਾ","Int.","ਹੋਰ","P.Pmt","Notes","Ph. No","Taken"
@@ -101,10 +104,7 @@
 
     const steps = [];
 
-    steps.push({
-      type: "start",
-      amount: currentAmount
-    });
+    steps.push({ type: "start", amount: currentAmount });
 
     const events = [...payments, ...extras].sort(
       (a, b) => parseDate(a.date) - parseDate(b.date)
@@ -113,7 +113,13 @@
     events.forEach(e => {
       const eventDate = parseDate(e.date);
 
-      const months = calculateMonths(currentDate, eventDate);
+      let months = calculateMonths(currentDate, eventDate);
+
+      // 🔥 FIRST MONTH RULE
+      if (currentDate.getTime() === startDate.getTime() && months === 0) {
+        months = 1;
+      }
+
       const monthlyInterest = currentAmount * rate / 100;
       const interest = monthlyInterest * months;
 
@@ -135,7 +141,6 @@
 
       if (e.type === "payment") {
         currentAmount -= e.amount;
-
         steps.push({
           type: "payment",
           date: eventDate,
@@ -144,7 +149,6 @@
         });
       } else {
         currentAmount += e.amount;
-
         steps.push({
           type: "extra",
           date: eventDate,
@@ -156,7 +160,13 @@
       currentDate = eventDate;
     });
 
-    const months = calculateMonths(currentDate, new Date());
+    let months = calculateMonths(currentDate, new Date());
+
+    // 🔥 FIRST MONTH RULE (NO EVENTS CASE)
+    if (currentDate.getTime() === startDate.getTime() && months === 0) {
+      months = 1;
+    }
+
     const monthlyInterest = currentAmount * rate / 100;
     const interest = monthlyInterest * months;
 
@@ -174,11 +184,44 @@
     currentAmount += interest;
     totalInterest += interest;
 
-    return {
-      totalInterest,
-      finalAmount: currentAmount,
-      steps
-    };
+    return { totalInterest, finalAmount: currentAmount, steps };
+  }
+
+  function cleanPhoneNumber(phone) {
+    if (!phone) return "";
+    let digits = String(phone).replace(/\D/g, "");
+    digits = digits.replace(/^0+/, "");
+
+    if (digits.length === 12 && digits.startsWith("91")) return digits;
+    if (digits.length === 10) return "91" + digits;
+    if (digits.length > 10) return "91" + digits.slice(-10);
+
+    return "";
+  }
+
+  function sendWhatsApp(record, result) {
+    const phone = cleanPhoneNumber(record["Ph. No"]);
+
+    if (!phone) {
+      alert("Invalid phone number");
+      return;
+    }
+
+    const message = `
+BK Jewellers
+
+Name: ${record["Name"]}
+Item: ${record["Item"]}
+
+Loan: ₹${Math.round(result.finalAmount - result.totalInterest)}
+Interest: ₹${Math.round(result.totalInterest)}
+Total: ₹${Math.round(result.finalAmount)}
+
+Thank you 🙏
+    `;
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
   }
 
   window.showInterest = function(record) {
@@ -187,9 +230,12 @@
 
     const result = calculateFull(record);
 
+    lastResult = result;
+    lastRecord = record;
+
     if (!result) {
       content.innerHTML = "Invalid data";
-      modal.style.display = "block";
+      modal.style.display = "flex";
       return;
     }
 
@@ -197,57 +243,45 @@
 
     result.steps.forEach(step => {
       if (step.type === "start") {
-        html += `<div class="pp-item"><b>Start</b><span>₹${step.amount}</span></div>`;
+        html += `<div class="pp-item"><b>Start</b><span>₹${Math.round(step.amount)}</span></div>`;
       }
 
       if (step.type === "interest") {
         html += `
           <div class="pp-item">
             <span>${formatDate(step.from)} → ${formatDate(step.to)}<br>
-            ₹${step.base} @ ${step.rate}% × ${step.months} months</span>
-            <span>+₹${step.interest.toFixed(0)}</span>
-          </div>
-          <div class="pp-item">
-            <span>After Interest</span>
-            <span>₹${step.after.toFixed(0)}</span>
+            ₹${Math.round(step.base)} @ ${step.rate}% × ${step.months} months</span>
+            <span>+₹${Math.round(step.interest)}</span>
           </div>
         `;
       }
 
       if (step.type === "payment") {
-        html += `
-          <div class="pp-item">
-            <span>Payment (${formatDate(step.date)})</span>
-            <span>-₹${step.amount}</span>
-          </div>
-          <div class="pp-item">
-            <span>Remaining</span>
-            <span>₹${step.after}</span>
-          </div>
-        `;
+        html += `<div class="pp-item"><span>Payment (${formatDate(step.date)})</span><span>-₹${step.amount}</span></div>`;
       }
 
       if (step.type === "extra") {
-        html += `
-          <div class="pp-item">
-            <span>Extra (${formatDate(step.date)})</span>
-            <span>+₹${step.amount}</span>
-          </div>
-          <div class="pp-item">
-            <span>New Amount</span>
-            <span>₹${step.after}</span>
-          </div>
-        `;
+        html += `<div class="pp-item"><span>Extra (${formatDate(step.date)})</span><span>+₹${step.amount}</span></div>`;
       }
     });
 
     html += `<hr>
-      <div class="pp-item"><b>Total Interest</b><span>₹${result.totalInterest.toFixed(0)}</span></div>
-      <div class="pp-item"><b>Final Amount</b><span>₹${result.finalAmount.toFixed(0)}</span></div>
+      <div class="pp-item"><b>Total Interest</b><span>₹${Math.round(result.totalInterest)}</span></div>
+      <div class="pp-item"><b>Final Amount</b><span>₹${Math.round(result.finalAmount)}</span></div>
+    `;
+
+    html += `
+      <div style="margin-top:15px; display:flex; gap:10px;">
+        <button class="pp-btn" id="waSend">Send WhatsApp</button>
+      </div>
     `;
 
     content.innerHTML = html;
-    modal.style.display = "block";
+    modal.style.display = "flex";
+
+    document.getElementById("waSend").onclick = () => {
+      sendWhatsApp(lastRecord, lastResult);
+    };
   };
 
   function fetchRecord(serialInput) {
