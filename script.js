@@ -4,7 +4,6 @@
   const range   = "Sheet1!A:M";
 
   let cachedData = null;
-
   let lastResult = null;
   let lastRecord = null;
 
@@ -102,8 +101,9 @@
     let currentDate = startDate;
     let totalInterest = 0;
 
-    const steps = [];
+    let isFirstPeriod = true; // 🔥 KEY FIX
 
+    const steps = [];
     steps.push({ type: "start", amount: currentAmount });
 
     const events = [...payments, ...extras].sort(
@@ -115,8 +115,8 @@
 
       let months;
 
-      // 🔥 FIX: FIRST PERIOD ALWAYS FULL MONTH
-      if (currentDate.getTime() === startDate.getTime()) {
+      // 🔥 FIRST MONTH ALWAYS FULL
+      if (isFirstPeriod) {
         months = 1;
       } else {
         months = calculateMonths(currentDate, eventDate);
@@ -141,12 +141,25 @@
         totalInterest += interest;
       }
 
+      // 🔥 AFTER FIRST INTEREST → TURN OFF FLAG
+      isFirstPeriod = false;
+
       if (e.type === "payment") {
         currentAmount -= e.amount;
-        steps.push({ type: "payment", date: eventDate, amount: e.amount, after: currentAmount });
+        steps.push({
+          type: "payment",
+          date: eventDate,
+          amount: e.amount,
+          after: currentAmount
+        });
       } else {
         currentAmount += e.amount;
-        steps.push({ type: "extra", date: eventDate, amount: e.amount, after: currentAmount });
+        steps.push({
+          type: "extra",
+          date: eventDate,
+          amount: e.amount,
+          after: currentAmount
+        });
       }
 
       currentDate = eventDate;
@@ -154,8 +167,8 @@
 
     let months;
 
-    // 🔥 FIX: NO EVENT CASE → STILL FIRST PERIOD
-    if (currentDate.getTime() === startDate.getTime()) {
+    // 🔥 NO EVENT CASE → STILL FIRST PERIOD
+    if (isFirstPeriod) {
       months = 1;
     } else {
       months = calculateMonths(currentDate, new Date());
@@ -183,6 +196,7 @@
 
   function cleanPhoneNumber(phone) {
     if (!phone) return "";
+
     let digits = String(phone).replace(/\D/g, "");
     digits = digits.replace(/^0+/, "");
 
@@ -265,7 +279,7 @@ Thank you 🙏
     `;
 
     html += `
-      <div style="margin-top:15px; display:flex; gap:10px;">
+      <div style="margin-top:15px;">
         <button class="pp-btn" id="waSend">Send WhatsApp</button>
       </div>
     `;
