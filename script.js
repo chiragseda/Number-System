@@ -113,11 +113,13 @@
     events.forEach(e => {
       const eventDate = parseDate(e.date);
 
-      let months = calculateMonths(currentDate, eventDate);
+      let months;
 
-      // 🔥 FIRST MONTH RULE
-      if (currentDate.getTime() === startDate.getTime() && months === 0) {
+      // 🔥 FIX: FIRST PERIOD ALWAYS FULL MONTH
+      if (currentDate.getTime() === startDate.getTime()) {
         months = 1;
+      } else {
+        months = calculateMonths(currentDate, eventDate);
       }
 
       const monthlyInterest = currentAmount * rate / 100;
@@ -141,30 +143,22 @@
 
       if (e.type === "payment") {
         currentAmount -= e.amount;
-        steps.push({
-          type: "payment",
-          date: eventDate,
-          amount: e.amount,
-          after: currentAmount
-        });
+        steps.push({ type: "payment", date: eventDate, amount: e.amount, after: currentAmount });
       } else {
         currentAmount += e.amount;
-        steps.push({
-          type: "extra",
-          date: eventDate,
-          amount: e.amount,
-          after: currentAmount
-        });
+        steps.push({ type: "extra", date: eventDate, amount: e.amount, after: currentAmount });
       }
 
       currentDate = eventDate;
     });
 
-    let months = calculateMonths(currentDate, new Date());
+    let months;
 
-    // 🔥 FIRST MONTH RULE (NO EVENTS CASE)
-    if (currentDate.getTime() === startDate.getTime() && months === 0) {
+    // 🔥 FIX: NO EVENT CASE → STILL FIRST PERIOD
+    if (currentDate.getTime() === startDate.getTime()) {
       months = 1;
+    } else {
+      months = calculateMonths(currentDate, new Date());
     }
 
     const monthlyInterest = currentAmount * rate / 100;
