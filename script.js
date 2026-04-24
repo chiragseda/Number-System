@@ -101,7 +101,7 @@
     let currentDate = startDate;
     let totalInterest = 0;
 
-    let isFirstPeriod = true; // 🔥 KEY FIX
+    let isFirstPeriod = true;
 
     const steps = [];
     steps.push({ type: "start", amount: currentAmount });
@@ -115,9 +115,9 @@
 
       let months;
 
-      // 🔥 FIRST MONTH ALWAYS FULL
+      // ✅ FIXED LOGIC (FIRST PERIOD)
       if (isFirstPeriod) {
-        months = 1;
+        months = Math.max(1, calculateMonths(currentDate, eventDate));
       } else {
         months = calculateMonths(currentDate, eventDate);
       }
@@ -141,7 +141,6 @@
         totalInterest += interest;
       }
 
-      // 🔥 AFTER FIRST INTEREST → TURN OFF FLAG
       isFirstPeriod = false;
 
       if (e.type === "payment") {
@@ -167,9 +166,9 @@
 
     let months;
 
-    // 🔥 NO EVENT CASE → STILL FIRST PERIOD
+    // ✅ FIXED LOGIC (FINAL PERIOD)
     if (isFirstPeriod) {
-      months = 1;
+      months = Math.max(1, calculateMonths(currentDate, new Date()));
     } else {
       months = calculateMonths(currentDate, new Date());
     }
