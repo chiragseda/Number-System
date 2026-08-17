@@ -39,6 +39,11 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
 .header-strip {
   display: flex;
   gap: 6px;
@@ -99,6 +104,60 @@ button {
   border: none;
 }
 
+/* ============================================================
+   TAKEN STATUS
+   ============================================================ */
+
+.taken-status {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.taken-status.active {
+  background: #eefbf3;
+  color: #16803c;
+  border: 1px solid #ccebd7;
+}
+
+.taken-status.taken {
+  background: #ffe7e7;
+  color: #b00000;
+  border: 1px solid #ffbcbc;
+}
+
+.action-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.taken-action-btn,
+.taken-done-btn {
+  margin-top: 6px;
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  border: none;
+}
+
+.taken-action-btn {
+  background: #d00000;
+  color: #fff;
+}
+
+.taken-action-btn:hover:not(:disabled) {
+  background: #b00000;
+}
+
+.taken-done-btn {
+  background: #ffe1e1;
+  color: #b00000;
+  border: 1px solid #ffb0b0;
+}
+
 /* 🔥 MODAL FIXED */
 .modal {
   display: none;
@@ -145,5 +204,18 @@ button {
 @media (max-width: 600px) {
   .fields-grid {
     grid-template-columns: 1fr;
+  }
+
+  .field.important {
+    grid-column: span 1;
+  }
+
+  .action-field {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .action-field button {
+    width: 100%;
   }
 }

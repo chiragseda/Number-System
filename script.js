@@ -3,6 +3,12 @@
   const apiKey = "AIzaSyAwe-nAyIphZ47DgK5din3JoqADod5sVLk";
   const range = "Sheet1!A:M";
 
+  // ============================================================
+  // TAKEN STATUS CONFIGURATION
+  // ============================================================
+  // Paste your deployed Google Apps Script Web App URL here.
+  const TAKEN_API_URL = "https://script.google.com/macros/s/AKfycbzPBNfn0u6rUXTT0My6bfkUvXHw1FxgP_xEoF6WfO_UZ4RPAQerewdLhG7QH8ESo6Jx/exec";
+
   let cachedData = null;
   let lastResult = null;
   let lastRecord = null;
@@ -176,38 +182,7 @@
   // ============================================================
   // MAIN INTEREST CALCULATION
   //
-  // IMPORTANT:
-  //
-  // PRINCIPAL and INTEREST are ALWAYS separate.
-  //
-  // Interest is NEVER added to principal.
-  //
-  // 7-DAY RULE:
-  //
-  // Extra money taken within 7 days of the original loan date
-  // is added to the INITIAL PRINCIPAL before the first
-  // minimum-month interest is calculated.
-  //
-  // Example:
-  //
-  // 09/04 -> ₹50,000
-  // 12/04 -> +₹5,000
-  //
-  // Since 12/04 is within 7 days:
-  //
-  // Principal = ₹55,000
-  // First month interest = ₹55,000 × 2%
-  //
-  // Instead of:
-  //
-  // ₹50,000 × 2%
-  //
-  // followed by the ₹5,000 being treated separately.
-  //
-  // Extra taken on day 8 or later is treated normally:
-  //
-  // Interest is calculated up to that date first,
-  // then the extra amount is added to principal.
+  // EXISTING LOGIC — DO NOT CHANGE
   // ============================================================
 
   function calculateFull(record) {
@@ -263,14 +238,6 @@
       graceEndDate.getDate() + 7
     );
 
-    // Extra money taken between:
-    //
-    // Start date
-    // through
-    // Start date + 7 days
-    //
-    // is treated as part of the initial principal.
-
     const initialExtras = extras.filter(extra => {
       const extraDate = parseDate(extra.date);
 
@@ -280,9 +247,6 @@
         extraDate <= graceEndDate
       );
     });
-
-    // Extra money after the 7-day window
-    // is processed normally.
 
     const laterExtras = extras.filter(extra => {
       const extraDate = parseDate(extra.date);
@@ -299,11 +263,6 @@
     // ----------------------------------------------------------
 
     let principal = initialPrincipal;
-
-    // Add ALL early extras to the initial principal.
-    //
-    // This means multiple extras within the first 7 days
-    // are all included.
 
     initialExtras.forEach(extra => {
       principal += extra.amount;
@@ -360,9 +319,6 @@
 
     // ----------------------------------------------------------
     // COMBINE NORMAL EVENTS
-    //
-    // Initial extras are NOT included here because they have
-    // already been absorbed into the starting principal.
     // ----------------------------------------------------------
 
     const events = [
@@ -395,8 +351,6 @@
       let months;
 
       if (isFirstPeriod) {
-        // First period keeps your original rule:
-        // minimum 1 month.
         months = Math.max(
           1,
           calculateMonths(
@@ -457,11 +411,6 @@
 
       // --------------------------------------------------------
       // LATE EXTRA MONEY
-      //
-      // This is an extra taken AFTER the initial 7-day window.
-      //
-      // Interest up to this date has already been calculated.
-      // Now increase principal.
       // --------------------------------------------------------
 
       if (event.type === "extra") {
@@ -490,12 +439,6 @@
 
       // --------------------------------------------------------
       // PART PAYMENT
-      //
-      // Payment first clears outstanding interest.
-      //
-      // Remaining payment reduces principal.
-      //
-      // Interest NEVER becomes principal.
       // --------------------------------------------------------
 
       if (event.type === "payment") {
@@ -554,20 +497,12 @@
         });
       }
 
-      // Move the calculation date forward.
-
       currentDate =
         new Date(eventDate);
     });
 
     // ==========================================================
     // FINAL INTEREST
-    //
-    // Calculate interest from the last event until today.
-    //
-    // ONLY PRINCIPAL is used.
-    //
-    // Previous interest is NEVER added to principal.
     // ==========================================================
 
     const today = new Date();
@@ -575,13 +510,6 @@
     let finalMonths;
 
     if (isFirstPeriod) {
-      // No normal payment or late-extra event occurred.
-      //
-      // If there were early extras, they are already included
-      // in principal.
-      //
-      // Minimum first month still applies.
-
       finalMonths = Math.max(
         1,
         calculateMonths(
@@ -735,6 +663,209 @@ Thank you 🙏
       url,
       "_blank"
     );
+  }
+
+  // ============================================================
+  // TAKEN STATUS
+  // ============================================================
+
+  function hasTakenDate(record) {
+    const value =
+      String(record["Taken"] || "").trim();
+
+    return (
+      value !== "" &&
+      value !== "-" &&
+      value !== "—"
+    );
+  }
+
+  function formatTakenDate(value) {
+    if (!value) return "";
+
+    const parsed = parseDate(value);
+
+    if (parsed) {
+      const day =
+        String(parsed.getDate())
+          .padStart(2, "0");
+
+      const month =
+        String(parsed.getMonth() + 1)
+          .padStart(2, "0");
+
+      const year =
+        parsed.getFullYear();
+
+      return `${day}.${month}.${year}`;
+    }
+
+    return String(value);
+  }
+
+  async function markRecordAsTaken(record, button) {
+    if (!record || !record["Serial no."]) {
+      alert("Invalid record.");
+      return;
+    }
+
+    if (hasTakenDate(record)) {
+      alert(
+        `This record is already marked as taken on ${formatTakenDate(record["Taken"])}.`
+      );
+
+      return;
+    }
+
+    if (
+      !TAKEN_API_URL ||
+      TAKEN_API_URL.includes("PASTE_YOUR")
+    ) {
+      alert(
+        "Taken system is not connected yet. Deploy the Google Apps Script backend and paste its Web App URL into TAKEN_API_URL in script.js."
+      );
+
+      return;
+    }
+
+    const confirmed = confirm(
+      `Mark Serial No. ${record["Serial no."]} as TAKEN?\n\nToday's date will be entered in the Taken column and columns A:M will be highlighted red.`
+    );
+
+    if (!confirmed) return;
+
+    const originalText =
+      button
+        ? button.textContent
+        : "";
+
+    if (button) {
+      button.disabled = true;
+      button.textContent =
+        "Marking...";
+    }
+
+    try {
+      const response = await fetch(
+        TAKEN_API_URL,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "text/plain;charset=utf-8"
+          },
+
+          body: JSON.stringify({
+            action: "markTaken",
+
+            serialNo:
+              String(
+                record["Serial no."]
+              ).trim()
+          })
+        }
+      );
+
+      const data =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !data.success
+      ) {
+        throw new Error(
+          data.message ||
+          "Unable to update the record."
+        );
+      }
+
+      const takenDate =
+        data.takenDate ||
+        formatDate(new Date());
+
+      // Update local record/cache.
+      record["Taken"] =
+        takenDate;
+
+      if (
+        cachedData &&
+        cachedData.values
+      ) {
+        const rows =
+          cachedData.values.slice(1);
+
+        const rowIndex =
+          rows.findIndex(row =>
+            String(
+              row[0] || ""
+            ).trim() ===
+            String(
+              record["Serial no."]
+            ).trim()
+          );
+
+        if (rowIndex !== -1) {
+          // M is index 12 in A:M.
+          cachedData.values[
+            rowIndex + 1
+          ][12] =
+            takenDate;
+        }
+      }
+
+      if (button) {
+        button.disabled = true;
+
+        button.classList.remove(
+          "taken-action-btn"
+        );
+
+        button.classList.add(
+          "taken-done-btn"
+        );
+
+        button.textContent =
+          `Taken on ${formatTakenDate(takenDate)}`;
+      }
+
+      const status =
+        document.getElementById(
+          "takenStatus"
+        );
+
+      if (status) {
+        status.className =
+          "taken-status taken";
+
+        status.innerHTML =
+          `🔴 <b>TAKEN</b> — ${escapeHtml(
+            formatTakenDate(takenDate)
+          )}`;
+      }
+
+      alert(
+        `Serial No. ${record["Serial no."]} marked as taken on ${formatTakenDate(takenDate)}.`
+      );
+
+    } catch (error) {
+      console.error(
+        "Taken update error:",
+        error
+      );
+
+      alert(
+        `Unable to mark this record as taken.\n\n${error.message || error}`
+      );
+
+      if (button) {
+        button.disabled = false;
+
+        button.textContent =
+          originalText ||
+          "Mark as Taken";
+      }
+    }
   }
 
   // ============================================================
@@ -1112,8 +1243,36 @@ Thank you 🙏
       // RECORD CARD
       // ========================================================
 
+      const alreadyTaken =
+        hasTakenDate(record);
+
+      const takenDateText =
+        alreadyTaken
+          ? formatTakenDate(
+              record["Taken"]
+            )
+          : "";
+
       let html =
         `<div class="record-card">
+
+          <div id="takenStatus"
+               class="taken-status ${
+                 alreadyTaken
+                   ? "taken"
+                   : "active"
+               }">
+
+            ${
+              alreadyTaken
+                ? `🔴 <b>TAKEN</b> — ${escapeHtml(
+                    takenDateText
+                  )}`
+                : `🟢 <b>ACTIVE</b>`
+            }
+
+          </div>
+
           <div class="fields-grid">`;
 
       headers.forEach(header => {
@@ -1135,7 +1294,26 @@ Thank you 🙏
       });
 
       html += `
-        <div class="field important">
+        <div class="field important action-field">
+
+          ${
+            alreadyTaken
+
+              ? `<button
+                   class="taken-done-btn"
+                   id="takenBtn"
+                   disabled>
+                   Taken on ${escapeHtml(
+                     takenDateText
+                   )}
+                 </button>`
+
+              : `<button
+                   class="taken-action-btn"
+                   id="takenBtn">
+                   Mark as Taken
+                 </button>`
+          }
 
           <button
             class="pp-btn"
@@ -1160,6 +1338,23 @@ Thank you 🙏
       ).onclick = () => {
         showInterest(record);
       };
+
+      const takenBtn =
+        document.getElementById(
+          "takenBtn"
+        );
+
+      if (
+        takenBtn &&
+        !alreadyTaken
+      ) {
+        takenBtn.onclick = () => {
+          markRecordAsTaken(
+            record,
+            takenBtn
+          );
+        };
+      }
     }
   }
 
