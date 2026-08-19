@@ -292,33 +292,15 @@
     newRecordModal.style.display =
       "flex";
 
-
-    // Get the next serial number from
-    // the backend.
+    // Get the next serial number from the backend.
 
     try {
 
-      const response =
-        await fetch(
-          NEW_RECORD_API_URL,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "text/plain;charset=utf-8"
-            },
-
-            body: JSON.stringify({
-              action:
-                "getNextSerial"
-            })
-          }
-        );
-
-
       const data =
-        await response.json();
+        await fetchNextSerialWithRetry(
+          3,
+          700
+        );
 
 
       if (
@@ -336,8 +318,9 @@
           "Unable to load";
 
         alert(
-          data.message ||
-          "Unable to get next serial number."
+          data && data.message
+            ? data.message
+            : "Unable to get next serial number."
         );
 
       }
@@ -361,6 +344,159 @@
 
   }
 
+
+  // ==========================================================
+  // FETCH NEXT SERIAL WITH SAFE RETRY
+  // ==========================================================
+
+  async function fetchNextSerialWithRetry(
+    maxAttempts = 3,
+    retryDelay = 700
+  ) {
+
+    let lastError =
+      new Error(
+        "Unable to get next serial number."
+      );
+
+    for (
+      let attempt = 1;
+      attempt <= maxAttempts;
+      attempt++
+    ) {
+
+      try {
+
+        const response =
+          await fetch(
+            NEW_RECORD_API_URL,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "text/plain;charset=utf-8"
+              },
+
+              body: JSON.stringify({
+                action:
+                  "getNextSerial"
+              })
+            }
+          );
+
+
+        // Read response as text first.
+        // This prevents the "Unexpected token '<'"
+        // error when Google returns an HTML page.
+
+        const responseText =
+          await response.text();
+
+
+        let data;
+
+
+        try {
+
+          data =
+            JSON.parse(
+              responseText
+            );
+
+        } catch (parseError) {
+
+          lastError =
+            new Error(
+              "The server returned an invalid response."
+            );
+
+
+          console.warn(
+            `Next serial attempt ${attempt}/${maxAttempts} returned non-JSON data.`,
+            responseText
+              ? responseText.substring(0, 200)
+              : "(empty response)"
+          );
+
+
+          if (
+            attempt < maxAttempts
+          ) {
+
+            await wait(
+              retryDelay * attempt
+            );
+
+            continue;
+
+          }
+
+
+          throw lastError;
+
+        }
+
+
+        return data;
+
+      } catch (error) {
+
+        lastError =
+          error instanceof Error
+            ? error
+            : new Error(
+                String(error)
+              );
+
+
+        if (
+          attempt < maxAttempts
+        ) {
+
+          console.warn(
+            `Next serial request failed. Retrying ${attempt + 1}/${maxAttempts}...`,
+            lastError
+          );
+
+
+          await wait(
+            retryDelay * attempt
+          );
+
+
+          continue;
+
+        }
+
+
+        throw lastError;
+
+      }
+
+    }
+
+
+    throw lastError;
+
+  }
+
+
+  // ==========================================================
+  // RETRY DELAY
+  // ==========================================================
+
+  function wait(milliseconds) {
+
+    return new Promise(
+      resolve =>
+        setTimeout(
+          resolve,
+          milliseconds
+        )
+    );
+
+  }
 
   // ==========================================================
   // CLOSE
