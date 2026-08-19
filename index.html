@@ -2,32 +2,634 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  />
+
   <title>Record Viewer</title>
-  <link rel="stylesheet" href="style.css" />
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  />
 </head>
+
 <body>
+
   <div class="container">
+
     <h1>Record Lookup</h1>
 
-    <form id="searchForm" class="controls">
-      <input id="serialInput" type="text" placeholder="Enter Serial No." required />
-      <button type="submit">Search</button>
+    <!-- ======================================================
+         EXISTING SEARCH SYSTEM
+         ====================================================== -->
+
+    <form
+      id="searchForm"
+      class="controls"
+    >
+
+      <input
+        id="serialInput"
+        type="text"
+        placeholder="Enter Serial No."
+        required
+      />
+
+      <button type="submit">
+        Search
+      </button>
+
     </form>
 
-    <div id="headerStrip" class="header-strip"></div>
+
+    <!-- ======================================================
+         NEW RECORD BUTTON
+         ====================================================== -->
+
+    <div class="new-record-toolbar">
+
+      <button
+        type="button"
+        id="openNewRecordBtn"
+        class="new-record-main-btn"
+      >
+        + New Record
+      </button>
+
+    </div>
+
+
+    <div
+      id="headerStrip"
+      class="header-strip"
+    ></div>
+
+
     <div id="result"></div>
+
   </div>
 
-  <!-- MODAL -->
-  <div id="ppModal" class="modal">
+
+  <!-- ========================================================
+       EXISTING PART PAYMENT MODAL
+       ======================================================== -->
+
+  <div
+    id="ppModal"
+    class="modal"
+  >
+
     <div class="modal-content">
-      <span id="closeModal">&times;</span>
-      <h3>Part Payments</h3>
+
+      <span id="closeModal">
+        &times;
+      </span>
+
+      <h3>
+        Part Payments
+      </h3>
+
       <div id="ppContent"></div>
+
     </div>
+
   </div>
+
+
+  <!-- ========================================================
+       NEW RECORD MODAL
+       ======================================================== -->
+
+  <div
+    id="newRecordModal"
+    class="modal new-record-modal"
+  >
+
+    <div class="modal-content new-record-content">
+
+      <span
+        id="closeNewRecordModal"
+        class="new-record-close"
+      >
+        &times;
+      </span>
+
+
+      <h2>
+        Add New Record
+      </h2>
+
+
+      <form id="newRecordForm">
+
+
+        <!-- SERIAL / DATE -->
+
+        <div class="new-record-row">
+
+          <div class="new-record-field">
+
+            <label>
+              Serial No.
+            </label>
+
+            <input
+              id="newSerial"
+              type="text"
+              readonly
+              placeholder="Automatic"
+            />
+
+          </div>
+
+
+          <div class="new-record-field">
+
+            <label>
+              Date
+            </label>
+
+            <input
+              id="newDate"
+              type="text"
+              readonly
+            />
+
+          </div>
+
+        </div>
+
+
+        <!-- CUSTOMER NAME -->
+
+        <div class="new-record-field">
+
+          <label>
+            Customer Name
+          </label>
+
+          <input
+            id="newCustomerName"
+            type="text" 
+            required
+          />
+
+        </div>
+
+
+        <!-- RELATION -->
+
+        <div class="new-record-row">
+
+          <div class="new-record-field">
+
+            <label>
+              Relation
+            </label>
+
+            <select
+              id="newRelation"
+            >
+
+              <option value="">
+                Select
+              </option>
+
+              <option value="s/o">
+                S/o
+              </option>
+
+              <option value="w/o">
+                W/o
+              </option>
+
+              <option value="d/o">
+                D/o
+              </option>
+
+              <option value="c/o">
+                C/o
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <div class="new-record-field">
+
+            <label>
+              Related Person Name
+            </label>
+
+            <input
+              id="newRelatedName"
+              type="text"
+            />
+
+          </div>
+
+        </div>
+
+
+        <!-- ADDRESS -->
+
+        <div class="new-record-field">
+
+          <label>
+            Address
+          </label>
+
+          <input
+            id="newAddress"
+            type="text"
+            required
+          />
+
+        </div>
+
+
+        <!-- ITEM -->
+
+        <div class="new-record-field">
+
+          <label>
+            Item
+          </label>
+
+          <input
+            id="newItem"
+            type="text"
+            required
+          />
+
+        </div>
+
+
+        <!-- AMOUNT -->
+
+        <div class="new-record-row">
+
+          <div class="new-record-field">
+
+            <label>
+              Amount Given
+            </label>
+
+            <input
+              id="newAmount"
+              type="number"
+              min="0"
+              step="1"
+              required
+            />
+
+          </div>
+
+
+          <div class="new-record-field">
+
+            <label>
+              Interest
+            </label>
+
+            <input
+              id="newInterest"
+              type="text"
+              value="2%"
+              readonly
+            />
+
+          </div>
+
+        </div>
+
+
+        <!-- GOLD WEIGHT -->
+
+        <div class="new-record-row">
+
+          <div class="new-record-field">
+
+            <label>
+              Pure Gold Weight — Sheet
+            </label>
+
+            <input
+              id="newPureGoldWeight"
+              type="text"
+              required
+            />
+
+          </div>
+
+
+          <div class="new-record-field">
+
+            <label>
+              Estimated Weight — Slip Only
+            </label>
+
+            <input
+              id="newEstimatedWeight"
+              type="text"
+              required
+            />
+
+          </div>
+
+        </div>
+
+
+        <!-- PHONE -->
+
+        <div class="new-record-field">
+
+          <label>
+            Phone Number
+          </label>
+
+          <input
+            id="newPhone"
+            type="tel"
+            required
+          />
+
+        </div>
+
+
+        <!-- AMOUNT WORDS PREVIEW -->
+
+        <div class="amount-words-preview">
+
+          <span>
+            Amount in words:
+          </span>
+
+          <strong id="amountWordsPreview">
+            —
+          </strong>
+
+        </div>
+
+
+        <!-- BUTTONS -->
+
+        <div class="new-record-actions">
+
+          <button
+            type="submit"
+            id="saveNewRecordBtn"
+            class="save-new-record-btn"
+          >
+            Save & Print Slips
+          </button>
+
+
+          <button
+            type="button"
+            id="cancelNewRecordBtn"
+            class="cancel-new-record-btn"
+          >
+            Cancel
+          </button>
+
+        </div>
+
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+  <!-- ========================================================
+       PRINT AREA
+       ======================================================== -->
+
+  <div
+    id="printArea"
+    class="print-area"
+  >
+
+    <div class="print-half">
+
+
+      <!-- ================= CUSTOMER COPY ================= -->
+
+      <div class="slip customer-slip">
+
+        <div class="slip-top">
+
+          <div>
+            ਨੰ: <span id="printSerialCustomer"></span>
+          </div>
+
+          <div>
+            ਫੋਨ: <span id="printPhoneCustomer"></span>
+          </div>
+
+        </div>
+
+
+        <div class="slip-line">
+          <span id="printNameCustomer"></span>
+        </div>
+
+
+        <div class="slip-line">
+          <span id="printAddressCustomer"></span>
+        </div>
+
+
+        <div class="slip-line">
+
+          ਗਹਿਣਾ
+          <span id="printItemCustomer"></span>
+
+        </div>
+
+
+        <div class="slip-line">
+
+          ਵਜ਼ਨ ਅੰਦਾਜ਼ਾ
+          <span id="printEstimatedWeightCustomer"></span>
+
+          ਖਾਲਸਾ ਸੋਨਾ ਅੰਦਾਜ਼ਾ
+          <span id="printGoldWeightCustomer"></span>
+
+        </div>
+
+
+        <div class="slip-line">
+
+          ਰੁਪਏ ਦਿੱਤੇ
+          <span id="printAmountCustomer"></span>
+
+          ਤਰੀਕ
+          <span id="printDateCustomer"></span>
+
+        </div>
+
+
+        <div class="slip-amount-words">
+
+          <span id="printAmountWordsCustomer"></span>
+
+        </div>
+
+
+        <div class="slip-bottom-text">
+
+          ਰੁਪਏ ਨਗਦ ਪ੍ਰਾਪਤ ਕੀਤੇ।
+
+        </div>
+
+
+        <div class="slip-footer">
+
+          ਇਕਰਾਰ 6 ਮਹੀਨੇ
+
+        </div>
+
+
+        <div class="slip-warning">
+
+          ਇਸ ਤੋਂ ਬਾਅਦ ਗਹਿਣਾ ਮੈਨੂੰ ਬਿਨਾਂ ਦੱਸੇ ਭੇਟ ਦਿੱਤਾ ਜਾਵੇ
+          ਮੈਨੂੰ ਕੋਈ ਇਤਰਾਜ਼ ਨਹੀਂ ਹੋਵੇਗਾ।
+
+        </div>
+
+
+        <div class="slip-signature">
+
+          ਦਸਤਖਤ
+
+        </div>
+
+      </div>
+
+
+      <!-- ================= OFFICE COPY ================= -->
+
+      <div class="slip office-slip">
+
+        <div class="slip-copy-title">
+          OFFICE COPY
+        </div>
+
+
+        <div class="slip-top">
+
+          <div>
+            ਨੰ: <span id="printSerialOffice"></span>
+          </div>
+
+          <div>
+            ਫੋਨ: <span id="printPhoneOffice"></span>
+          </div>
+
+        </div>
+
+
+        <div class="slip-line">
+          <span id="printNameOffice"></span>
+        </div>
+
+
+        <div class="slip-line">
+          <span id="printAddressOffice"></span>
+        </div>
+
+
+        <div class="slip-line">
+
+          ਗਹਿਣਾ
+          <span id="printItemOffice"></span>
+
+        </div>
+
+
+        <div class="slip-line">
+
+          ਵਜ਼ਨ ਅੰਦਾਜ਼ਾ
+          <span id="printEstimatedWeightOffice"></span>
+
+          ਖਾਲਸਾ ਸੋਨਾ ਅੰਦਾਜ਼ਾ
+          <span id="printGoldWeightOffice"></span>
+
+        </div>
+
+
+        <div class="slip-line">
+
+          ਰੁਪਏ ਦਿੱਤੇ
+          <span id="printAmountOffice"></span>
+
+          ਤਰੀਕ
+          <span id="printDateOffice"></span>
+
+        </div>
+
+
+        <div class="slip-amount-words">
+
+          <span id="printAmountWordsOffice"></span>
+
+        </div>
+
+
+        <div class="slip-bottom-text">
+
+          ਰੁਪਏ ਨਗਦ ਪ੍ਰਾਪਤ ਕੀਤੇ।
+
+        </div>
+
+
+        <div class="slip-footer">
+
+          ਇਕਰਾਰ 6 ਮਹੀਨੇ
+
+        </div>
+
+
+        <div class="slip-warning">
+
+          ਇਸ ਤੋਂ ਬਾਅਦ ਗਹਿਣਾ ਮੈਨੂੰ ਬਿਨਾਂ ਦੱਸੇ ਭੇਟ ਦਿੱਤਾ ਜਾਵੇ
+          ਮੈਨੂੰ ਕੋਈ ਇਤਰਾਜ਼ ਨਹੀਂ ਹੋਵੇਗਾ।
+
+        </div>
+
+
+        <div class="slip-signature">
+
+          ਦਸਤਖਤ
+
+        </div>
+
+      </div>
+
+
+    </div>
+
+  </div>
+
+
+  <!-- ========================================================
+       EXISTING SCRIPT — DO NOT MODIFY
+       ======================================================== -->
 
   <script src="script.js"></script>
+
+
+  <!-- ========================================================
+       NEW RECORD SYSTEM
+       ======================================================== -->
+
+  <script src="new-record.js"></script>
+
 </body>
 </html>

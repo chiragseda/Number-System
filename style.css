@@ -219,3 +219,502 @@ button:disabled {
     width: 100%;
   }
 }
+
+/* ============================================================
+   NEW RECORD SYSTEM
+   Everything below this point is NEW.
+   Existing CSS above remains untouched.
+   ============================================================ */
+
+
+/* ------------------------------------------------------------
+   NEW RECORD BUTTON
+   ------------------------------------------------------------ */
+
+.new-record-toolbar {
+  margin-bottom: 18px;
+}
+
+.new-record-main-btn {
+  background: linear-gradient(180deg, #198754, #146c43);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.new-record-main-btn:hover {
+  background: linear-gradient(180deg, #157347, #0f5132);
+}
+
+
+/* ------------------------------------------------------------
+   NEW RECORD MODAL
+   ------------------------------------------------------------ */
+
+.new-record-modal {
+  z-index: 2000;
+}
+
+.new-record-content {
+  max-width: 720px;
+}
+
+.new-record-content h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.new-record-close {
+  float: right;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  color: #555;
+}
+
+.new-record-close:hover {
+  color: #000;
+}
+
+
+/* ------------------------------------------------------------
+   FORM
+   ------------------------------------------------------------ */
+
+.new-record-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.new-record-field {
+  margin-bottom: 14px;
+}
+
+.new-record-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.new-record-field input,
+.new-record-field select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 11px;
+  border-radius: 8px;
+  border: 1px solid #d0d7de;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.new-record-field input:focus,
+.new-record-field select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.08);
+}
+
+.new-record-field input[readonly] {
+  background: #f5f7fa;
+  color: #555;
+}
+
+
+/* ------------------------------------------------------------
+   AMOUNT IN WORDS
+   ------------------------------------------------------------ */
+
+.amount-words-preview {
+  margin: 8px 0 18px;
+  padding: 11px 13px;
+  border-radius: 8px;
+  background: #f8fbff;
+  border: 1px solid #e3edf9;
+  font-size: 0.88rem;
+  color: #555;
+}
+
+.amount-words-preview strong {
+  display: block;
+  margin-top: 4px;
+  color: #111;
+}
+
+
+/* ------------------------------------------------------------
+   FORM BUTTONS
+   ------------------------------------------------------------ */
+
+.new-record-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.save-new-record-btn {
+  background: linear-gradient(180deg, #198754, #146c43);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 18px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.save-new-record-btn:hover {
+  background: linear-gradient(180deg, #157347, #0f5132);
+}
+
+.save-new-record-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.cancel-new-record-btn {
+  background: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 18px;
+  cursor: pointer;
+}
+
+.cancel-new-record-btn:hover {
+  background: #5c636a;
+}
+
+
+/* ============================================================
+   PRINT AREA
+   ============================================================ */
+
+/*
+   This area is hidden during normal website use.
+
+   It will be printed as:
+
+   A4 PORTRAIT
+   ┌─────────────────────────────────────┐
+   │  ┌────────────┐ ┌────────────┐      │
+   │  │   SLIP 1   │ │   SLIP 2   │      │
+   │  │            │ │            │      │
+   │  └────────────┘ └────────────┘      │
+   │                                     │
+   │ -------- TOP HALF ENDS -------------│
+   │                                     │
+   │                                     │
+   │          COMPLETELY BLANK           │
+   │                                     │
+   │                                     │
+   └─────────────────────────────────────┘
+*/
+
+.print-area {
+  display: none;
+}
+
+
+/* ============================================================
+   PRINT SETTINGS
+   ============================================================ */
+
+@media print {
+
+  /*
+     IMPORTANT:
+     A4 remains PORTRAIT.
+  */
+
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+
+  /*
+     Hide the entire normal application.
+  */
+
+  body {
+    display: block;
+    min-height: auto;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  body > .container,
+  body > .modal,
+  body > #newRecordModal {
+    display: none !important;
+  }
+
+
+  /*
+     Show ONLY the print area.
+  */
+
+  .print-area {
+    display: block !important;
+
+    width: 210mm;
+
+    /*
+       EXACTLY HALF OF A4 HEIGHT.
+       A4 = 297mm high
+       Half = 148.5mm
+    */
+
+    height: 148.5mm;
+
+    margin: 0;
+    padding: 0;
+
+    box-sizing: border-box;
+
+    background: #fff;
+
+    overflow: hidden;
+  }
+
+
+  /*
+     Two slips side-by-side.
+
+     A4 width = 210mm
+     Each slip = 105mm
+  */
+
+  .print-half {
+    width: 210mm;
+    height: 148.5mm;
+
+    display: flex;
+
+    flex-direction: row;
+
+    margin: 0;
+    padding: 0;
+
+    box-sizing: border-box;
+  }
+
+
+  /*
+     EACH SLIP = ONE QUARTER OF A4.
+
+     Width  = 105mm
+     Height = 148.5mm
+  */
+
+  .slip {
+    width: 105mm;
+    height: 148.5mm;
+
+    box-sizing: border-box;
+
+    padding: 7mm 6mm;
+
+    overflow: hidden;
+
+    font-family:
+      "Noto Sans Gurmukhi",
+      "Raavi",
+      "Arial Unicode MS",
+      Arial,
+      sans-serif;
+
+    color: #111;
+
+    background: #fff;
+
+    position: relative;
+  }
+
+
+  /*
+     Thin divider between the two slips.
+
+     This is only a visual cutting guide.
+  */
+
+  .office-slip {
+    border-left: 0.3mm dashed #999;
+  }
+
+
+  /* ----------------------------------------------------------
+     COPY LABEL
+     ---------------------------------------------------------- */
+
+  .slip-copy-title {
+    text-align: center;
+
+    font-family:
+      Arial,
+      sans-serif;
+
+    font-size: 9pt;
+
+    font-weight: bold;
+
+    margin-bottom: 2mm;
+
+    letter-spacing: 0.3px;
+  }
+
+
+  /* ----------------------------------------------------------
+     TOP ROW
+     ---------------------------------------------------------- */
+
+  .slip-top {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: baseline;
+
+    font-size: 9pt;
+
+    margin-bottom: 3mm;
+  }
+
+
+  /* ----------------------------------------------------------
+     SLIP LINES
+     ---------------------------------------------------------- */
+
+  .slip-line {
+    min-height: 9mm;
+
+    border-bottom: 0.25mm dotted #777;
+
+    font-size: 9pt;
+
+    line-height: 1.25;
+
+    padding: 1mm 0;
+
+    box-sizing: border-box;
+  }
+
+
+  .slip-line span {
+    font-weight: 600;
+    margin-left: 2mm;
+  }
+
+
+  /* ----------------------------------------------------------
+     AMOUNT IN WORDS
+     ---------------------------------------------------------- */
+
+  .slip-amount-words {
+    min-height: 11mm;
+
+    border-bottom: 0.25mm dotted #777;
+
+    padding: 2mm 0;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 9pt;
+
+    font-style: italic;
+
+    line-height: 1.35;
+
+    box-sizing: border-box;
+  }
+
+
+  /* ----------------------------------------------------------
+     BOTTOM TEXT
+     ---------------------------------------------------------- */
+
+  .slip-bottom-text {
+    font-size: 8.5pt;
+
+    margin-top: 2mm;
+
+    text-align: center;
+  }
+
+
+  .slip-footer {
+    margin-top: 3mm;
+
+    text-align: center;
+
+    font-size: 15pt;
+
+    font-weight: bold;
+  }
+
+
+  .slip-warning {
+    margin-top: 2mm;
+
+    font-size: 7.5pt;
+
+    line-height: 1.35;
+
+    text-align: center;
+  }
+
+
+  .slip-signature {
+    position: absolute;
+
+    right: 6mm;
+
+    bottom: 6mm;
+
+    font-size: 9pt;
+
+    font-weight: 600;
+  }
+
+
+  /*
+     Make sure the browser doesn't print accidental UI.
+  */
+
+  button,
+  input,
+  select,
+  textarea {
+    display: none !important;
+  }
+}
+
+
+/* ============================================================
+   MOBILE NEW RECORD FORM
+   ============================================================ */
+
+@media (max-width: 600px) {
+
+  .new-record-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .new-record-actions {
+    flex-direction: column;
+  }
+
+  .save-new-record-btn,
+  .cancel-new-record-btn {
+    width: 100%;
+  }
+
+}
