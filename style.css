@@ -34,7 +34,7 @@ button {
   padding: 10px 16px;
   border-radius: 8px;
   border: none;
-  background: linear-gradient(180deg,#007bff,#0062d6);
+  background: linear-gradient(180deg, #007bff, #0062d6);
   color: #fff;
   cursor: pointer;
 }
@@ -104,6 +104,7 @@ button:disabled {
   border: none;
 }
 
+
 /* ============================================================
    TAKEN STATUS
    ============================================================ */
@@ -158,18 +159,19 @@ button:disabled {
   border: 1px solid #ffb0b0;
 }
 
-/* 🔥 MODAL FIXED */
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+
 .modal {
   display: none;
   position: fixed;
   inset: 0;
   z-index: 1000;
   background: rgba(0,0,0,0.4);
-
-  /* Centering */
   align-items: center;
   justify-content: center;
-
   padding: 20px;
 }
 
@@ -179,12 +181,9 @@ button:disabled {
   max-width: 600px;
   border-radius: 12px;
   padding: 20px;
-
   max-height: 90vh;
   overflow-y: auto;
-
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-
   scroll-behavior: smooth;
 }
 
@@ -201,35 +200,10 @@ button:disabled {
   border-bottom: 1px solid #eee;
 }
 
-@media (max-width: 600px) {
-  .fields-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .field.important {
-    grid-column: span 1;
-  }
-
-  .action-field {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .action-field button {
-    width: 100%;
-  }
-}
 
 /* ============================================================
    NEW RECORD SYSTEM
-   Everything below this point is NEW.
-   Existing CSS above remains untouched.
    ============================================================ */
-
-
-/* ------------------------------------------------------------
-   NEW RECORD BUTTON
-   ------------------------------------------------------------ */
 
 .new-record-toolbar {
   margin-bottom: 18px;
@@ -248,11 +222,6 @@ button:disabled {
 .new-record-main-btn:hover {
   background: linear-gradient(180deg, #157347, #0f5132);
 }
-
-
-/* ------------------------------------------------------------
-   NEW RECORD MODAL
-   ------------------------------------------------------------ */
 
 .new-record-modal {
   z-index: 2000;
@@ -280,9 +249,9 @@ button:disabled {
 }
 
 
-/* ------------------------------------------------------------
-   FORM
-   ------------------------------------------------------------ */
+/* ============================================================
+   NEW RECORD FORM
+   ============================================================ */
 
 .new-record-row {
   display: grid;
@@ -327,9 +296,9 @@ button:disabled {
 }
 
 
-/* ------------------------------------------------------------
-   AMOUNT IN WORDS
-   ------------------------------------------------------------ */
+/* ============================================================
+   AMOUNT WORDS
+   ============================================================ */
 
 .amount-words-preview {
   margin: 8px 0 18px;
@@ -348,9 +317,9 @@ button:disabled {
 }
 
 
-/* ------------------------------------------------------------
+/* ============================================================
    FORM BUTTONS
-   ------------------------------------------------------------ */
+   ============================================================ */
 
 .new-record-actions {
   display: flex;
@@ -395,59 +364,35 @@ button:disabled {
    PRINT AREA
    ============================================================ */
 
-/*
-   This area is hidden during normal website use.
-
-   It will be printed as:
-
-   A4 PORTRAIT
-   ┌─────────────────────────────────────┐
-   │  ┌────────────┐ ┌────────────┐      │
-   │  │   SLIP 1   │ │   SLIP 2   │      │
-   │  │            │ │            │      │
-   │  └────────────┘ └────────────┘      │
-   │                                     │
-   │ -------- TOP HALF ENDS -------------│
-   │                                     │
-   │                                     │
-   │          COMPLETELY BLANK           │
-   │                                     │
-   │                                     │
-   └─────────────────────────────────────┘
-*/
-
 .print-area {
   display: none;
 }
 
 
 /* ============================================================
-   PRINT SETTINGS
+   PRINT VERSION
    ============================================================ */
 
 @media print {
-
-  /*
-     IMPORTANT:
-     A4 remains PORTRAIT.
-  */
 
   @page {
     size: A4 portrait;
     margin: 0;
   }
 
-
-  /*
-     Hide the entire normal application.
-  */
+  html,
+  body {
+    width: 210mm;
+    height: 297mm;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
 
   body {
     display: block;
-    min-height: auto;
-    margin: 0;
-    padding: 0;
-    background: #fff;
+    min-height: 297mm;
+    overflow: hidden;
   }
 
   body > .container,
@@ -457,47 +402,31 @@ button:disabled {
   }
 
 
-  /*
-     Show ONLY the print area.
-  */
+  /* ==========================================================
+     TOP HALF ONLY
+     ========================================================== */
 
   .print-area {
     display: block !important;
 
     width: 210mm;
-
-    /*
-       EXACTLY HALF OF A4 HEIGHT.
-       A4 = 297mm high
-       Half = 148.5mm
-    */
-
     height: 148.5mm;
 
     margin: 0;
     padding: 0;
 
-    box-sizing: border-box;
-
     background: #fff;
 
     overflow: hidden;
+
+    box-sizing: border-box;
   }
-
-
-  /*
-     Two slips side-by-side.
-
-     A4 width = 210mm
-     Each slip = 105mm
-  */
 
   .print-half {
     width: 210mm;
     height: 148.5mm;
 
     display: flex;
-
     flex-direction: row;
 
     margin: 0;
@@ -507,22 +436,24 @@ button:disabled {
   }
 
 
-  /*
-     EACH SLIP = ONE QUARTER OF A4.
-
-     Width  = 105mm
-     Height = 148.5mm
-  */
+  /* ==========================================================
+     EACH SLIP
+     ========================================================== */
 
   .slip {
     width: 105mm;
     height: 148.5mm;
 
+    position: relative;
+
     box-sizing: border-box;
 
-    padding: 7mm 6mm;
+    padding: 4.5mm 6.5mm 4mm 6.5mm;
 
     overflow: hidden;
+
+    background: #fff;
+    color: #111;
 
     font-family:
       "Noto Sans Gurmukhi",
@@ -531,162 +462,463 @@ button:disabled {
       Arial,
       sans-serif;
 
-    color: #111;
+    font-size: 8.2pt;
 
-    background: #fff;
-
-    position: relative;
+    line-height: 1.2;
   }
 
 
-  /*
-     Thin divider between the two slips.
-
-     This is only a visual cutting guide.
-  */
+  /* ==========================================================
+     CENTER CUTTING LINE
+     ========================================================== */
 
   .office-slip {
-    border-left: 0.3mm dashed #999;
+    border-left: 0.3mm dashed #888;
   }
 
 
-  /* ----------------------------------------------------------
-     COPY LABEL
-     ---------------------------------------------------------- */
+  /* ==========================================================
+     CUSTOMER COPY TITLE
+     ========================================================== */
 
-  .slip-copy-title {
-    text-align: center;
+  .customer-slip::before {
+    content: "ਗਾਹਕ ਕਾਪੀ";
+
+    display: block;
+
+    width: max-content;
+
+    margin: 0 auto 2.2mm auto;
+
+    padding: 1mm 4.5mm;
+
+    background: #111;
+    color: #fff;
+
+    border-radius: 1mm;
 
     font-family:
+      "Noto Sans Gurmukhi",
+      "Raavi",
       Arial,
       sans-serif;
 
-    font-size: 9pt;
+    font-size: 7.5pt;
+    font-weight: 800;
 
-    font-weight: bold;
-
-    margin-bottom: 2mm;
-
-    letter-spacing: 0.3px;
+    line-height: 1;
   }
 
 
-  /* ----------------------------------------------------------
-     TOP ROW
-     ---------------------------------------------------------- */
+  /* ==========================================================
+     OFFICE COPY TITLE
+     ========================================================== */
+
+  .slip-copy-title {
+    display: block;
+
+    width: max-content;
+
+    margin: 0 auto 2.2mm auto;
+
+    padding: 1mm 4.5mm;
+
+    background: #111;
+    color: #fff;
+
+    border-radius: 1mm;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 7.2pt;
+
+    font-weight: 800;
+
+    letter-spacing: 0.5px;
+
+    line-height: 1;
+  }
+
+
+  /* ==========================================================
+     SERIAL + PHONE
+     ========================================================== */
 
   .slip-top {
+    width: 100%;
+
+    min-height: 6.5mm;
+
     display: flex;
 
     justify-content: space-between;
 
-    align-items: baseline;
+    align-items: center;
 
-    font-size: 9pt;
+    padding: 0 0 1.7mm 0;
 
-    margin-bottom: 3mm;
-  }
+    margin: 0;
 
-
-  /* ----------------------------------------------------------
-     SLIP LINES
-     ---------------------------------------------------------- */
-
-  .slip-line {
-    min-height: 9mm;
-
-    border-bottom: 0.25mm dotted #777;
-
-    font-size: 9pt;
-
-    line-height: 1.25;
-
-    padding: 1mm 0;
+    border-bottom: 0.25mm solid #222;
 
     box-sizing: border-box;
+
+    font-size: 8pt;
+
+    font-weight: 700;
   }
 
+  .slip-top div {
+    white-space: nowrap;
+  }
+
+
+  /* ==========================================================
+     STANDARD INFORMATION ROW
+     ========================================================== */
+
+  .slip-line {
+    width: 100%;
+
+    min-height: 7.8mm;
+
+    display: flex;
+
+    align-items: center;
+
+    padding: 0.8mm 0;
+
+    margin: 0;
+
+    box-sizing: border-box;
+
+    border-bottom: 0.2mm dotted #999;
+
+    font-size: 8.3pt;
+  }
 
   .slip-line span {
-    font-weight: 600;
-    margin-left: 2mm;
+    margin-left: 1.5mm;
+    font-weight: 700;
   }
 
 
-  /* ----------------------------------------------------------
+  /* ==========================================================
+     CUSTOMER NAME
+     ========================================================== */
+
+  .slip-line:has(#printNameCustomer),
+  .slip-line:has(#printNameOffice) {
+
+    min-height: 8mm;
+
+    font-size: 8.7pt;
+
+    font-weight: 700;
+  }
+
+
+  /* ==========================================================
+     ADDRESS
+     ========================================================== */
+
+  .slip-line:has(#printAddressCustomer),
+  .slip-line:has(#printAddressOffice) {
+
+    min-height: 8mm;
+
+    font-size: 8.3pt;
+
+    font-weight: 600;
+  }
+
+
+  /* ==========================================================
+     ITEM
+     ========================================================== */
+
+  .slip-line:has(#printItemCustomer),
+  .slip-line:has(#printItemOffice) {
+
+    min-height: 8mm;
+
+    font-size: 8.5pt;
+  }
+
+  .slip-line:has(#printItemCustomer) span,
+  .slip-line:has(#printItemOffice) span {
+    font-weight: 700;
+  }
+
+
+  /* ==========================================================
+     WEIGHT ROW
+     ========================================================== */
+
+  .slip-line:has(#printEstimatedWeightCustomer),
+  .slip-line:has(#printEstimatedWeightOffice) {
+
+    min-height: 9.5mm;
+
+    display: grid;
+
+    grid-template-columns:
+      auto
+      auto
+      1fr
+      auto
+      auto;
+
+    column-gap: 1.2mm;
+
+    align-items: center;
+
+    font-size: 7.4pt;
+
+    white-space: nowrap;
+  }
+
+  .slip-line:has(#printEstimatedWeightCustomer) span,
+  .slip-line:has(#printEstimatedWeightOffice) span {
+
+    margin: 0;
+
+    font-size: 8.4pt;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+  }
+
+
+  /* ==========================================================
+     WEIGHT "g"
+     ========================================================== */
+
+  #printEstimatedWeightCustomer::after,
+  #printEstimatedWeightOffice::after,
+  #printGoldWeightCustomer::after,
+  #printGoldWeightOffice::after {
+
+    content: "g";
+
+    margin-left: 0.4mm;
+
+    font-weight: 800;
+  }
+
+
+  /* ==========================================================
+     AMOUNT + DATE
+     ========================================================== */
+
+  .slip-line:has(#printAmountCustomer),
+  .slip-line:has(#printAmountOffice) {
+
+    min-height: 9.5mm;
+
+    display: grid;
+
+    grid-template-columns:
+      auto
+      auto
+      1fr
+      auto
+      auto;
+
+    column-gap: 1.2mm;
+
+    align-items: center;
+
+    font-size: 7.7pt;
+
+    white-space: nowrap;
+  }
+
+  .slip-line:has(#printAmountCustomer) span,
+  .slip-line:has(#printAmountOffice) span {
+
+    margin: 0;
+
+    font-size: 8.8pt;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+  }
+
+
+  /* ==========================================================
      AMOUNT IN WORDS
-     ---------------------------------------------------------- */
+     ========================================================== */
 
   .slip-amount-words {
-    min-height: 11mm;
 
-    border-bottom: 0.25mm dotted #777;
+    width: 100%;
 
-    padding: 2mm 0;
+    min-height: 8.5mm;
 
-    font-family: Arial, sans-serif;
+    display: flex;
 
-    font-size: 9pt;
+    align-items: center;
+
+    padding: 0.8mm 0;
+
+    box-sizing: border-box;
+
+    border-bottom: 0.2mm dotted #999;
+
+    font-family:
+      Arial,
+      "Noto Sans Gurmukhi",
+      sans-serif;
+
+    font-size: 7.8pt;
 
     font-style: italic;
 
-    line-height: 1.35;
+    font-weight: 600;
 
-    box-sizing: border-box;
+    line-height: 1.15;
+  }
+
+  .slip-amount-words span {
+    display: block;
   }
 
 
-  /* ----------------------------------------------------------
-     BOTTOM TEXT
-     ---------------------------------------------------------- */
+  /* ==========================================================
+     CASH RECEIVED
+     ========================================================== */
 
   .slip-bottom-text {
-    font-size: 8.5pt;
 
-    margin-top: 2mm;
+    width: 100%;
 
-    text-align: center;
-  }
+    min-height: 7.5mm;
 
+    display: flex;
 
-  .slip-footer {
-    margin-top: 3mm;
+    justify-content: center;
 
-    text-align: center;
+    align-items: center;
 
-    font-size: 15pt;
+    margin: 1.2mm 0 0 0;
 
-    font-weight: bold;
-  }
+    padding: 0.8mm 0;
 
+    box-sizing: border-box;
 
-  .slip-warning {
-    margin-top: 2mm;
+    border-top: 0.2mm solid #555;
 
-    font-size: 7.5pt;
-
-    line-height: 1.35;
+    border-bottom: 0.2mm solid #555;
 
     text-align: center;
-  }
 
-
-  .slip-signature {
-    position: absolute;
-
-    right: 6mm;
-
-    bottom: 6mm;
-
-    font-size: 9pt;
+    font-size: 8pt;
 
     font-weight: 600;
   }
 
 
-  /*
-     Make sure the browser doesn't print accidental UI.
-  */
+  /* ==========================================================
+     SIX MONTH AGREEMENT
+     ========================================================== */
+
+  .slip-footer {
+
+    margin: 2.5mm 0 0 0;
+
+    padding: 0;
+
+    text-align: center;
+
+    font-family:
+      "Noto Sans Gurmukhi",
+      "Raavi",
+      Arial,
+      sans-serif;
+
+    font-size: 10.5pt;
+
+    font-weight: 900;
+
+    line-height: 1.1;
+  }
+
+  .slip-footer::before {
+
+    content: "────────  ❖  ────────";
+
+    display: block;
+
+    margin-bottom: 1mm;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 5.5pt;
+
+    font-weight: 400;
+  }
+
+  .slip-footer::after {
+
+    content: "────────  •  ────────";
+
+    display: block;
+
+    margin-top: 1mm;
+
+    font-family: Arial, sans-serif;
+
+    font-size: 5.5pt;
+
+    font-weight: 400;
+  }
+
+
+  /* ==========================================================
+     DISCLAIMER
+     ========================================================== */
+
+  .slip-warning {
+
+    width: 100%;
+
+    margin: 1.2mm 0 0 0;
+
+    padding: 0 1mm;
+
+    box-sizing: border-box;
+
+    text-align: center;
+
+    font-family:
+      "Noto Sans Gurmukhi",
+      "Raavi",
+      Arial,
+      sans-serif;
+
+    font-size: 6.8pt;
+
+    font-weight: 500;
+
+    line-height: 1.35;
+  }
+
+
+  /* ==========================================================
+     SIGNATURE REMOVED
+     ========================================================== */
+
+  .slip-signature {
+    display: none !important;
+  }
+
+
+  /* ==========================================================
+     HIDE WEBSITE CONTROLS WHEN PRINTING
+     ========================================================== */
 
   button,
   input,
@@ -698,10 +930,27 @@ button:disabled {
 
 
 /* ============================================================
-   MOBILE NEW RECORD FORM
+   MOBILE
    ============================================================ */
 
 @media (max-width: 600px) {
+
+  .fields-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .field.important {
+    grid-column: span 1;
+  }
+
+  .action-field {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .action-field button {
+    width: 100%;
+  }
 
   .new-record-row {
     grid-template-columns: 1fr;
@@ -716,5 +965,4 @@ button:disabled {
   .cancel-new-record-btn {
     width: 100%;
   }
-
 }
