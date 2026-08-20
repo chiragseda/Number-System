@@ -1322,6 +1322,26 @@ Thank you 🙏
             Calculate Interest
           </button>
 
+          <button
+            class="part-payment-btn"
+            type="button"
+            data-serial="${escapeHtml(
+              record["Serial no."]
+            )}"
+          >
+            Part Payment
+          </button>
+
+          <button
+            class="extra-amount-btn"
+            type="button"
+            data-serial="${escapeHtml(
+              record["Serial no."]
+            )}"
+          >
+            Extra Amount
+          </button>
+
         </div>
       `;
 
