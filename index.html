@@ -39,9 +39,9 @@
       <div class="col-12 col-xl-9">
         <div class="search-panel h-100">
           <div class="search-heading"><i class="bi bi-search"></i><h1>Find Your Record</h1></div>
-          <p class="search-help">Enter the serial number to view customer details, payments and calculate interest.</p>
+          <p class="search-help">Enter a serial number, customer name, or phone number to view records, payments and calculate interest.</p>
           <form id="searchForm" class="controls row g-2">
-            <div class="col-12 col-md"><input id="serialInput" class="form-control" type="text" inputmode="numeric" autocomplete="off" placeholder="Enter Serial Number" aria-label="Serial number" required /></div>
+            <div class="col-12 col-md"><input id="serialInput" class="form-control" type="text" inputmode="search" autocomplete="off" placeholder="Serial / Customer Name / Phone" aria-label="Serial number, customer name, or phone" required /></div>
             <div class="col-12 col-md-auto"><button class="search-btn" type="submit"><i class="bi bi-search me-1"></i>Search</button></div>
           </form>
         </div>
@@ -56,6 +56,7 @@
     </section>
 
     <div id="headerStrip" class="header-strip"></div>
+    <div id="customerSearchResults" class="customer-search-results" aria-live="polite"></div>
     <div id="result"></div>
   </main>
 

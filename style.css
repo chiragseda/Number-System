@@ -641,3 +641,127 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ============================================================
+   CUSTOMER MULTI-RECORD SEARCH
+   ============================================================ */
+.customer-search-results {
+  margin-top: 18px;
+}
+
+.customer-results-panel {
+  background: #fff;
+  border: 1px solid rgba(11,58,91,.12);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(11,58,91,.06);
+}
+
+.customer-results-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.customer-results-title {
+  margin: 0;
+  color: #0b3a5b;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.customer-results-meta {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: .9rem;
+}
+
+.customer-record-list {
+  display: grid;
+  gap: 10px;
+}
+
+.customer-record-option {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.customer-record-option:hover,
+.customer-record-option:focus-visible {
+  border-color: #0b3a5b;
+  box-shadow: 0 5px 18px rgba(11,58,91,.10);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.customer-record-serial {
+  min-width: 68px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  background: #eef5f9;
+  color: #0b3a5b;
+  font-weight: 800;
+  text-align: center;
+}
+
+.customer-record-main strong {
+  display: block;
+  color: #111827;
+  font-size: .96rem;
+}
+
+.customer-record-main span {
+  display: block;
+  color: #6b7280;
+  font-size: .84rem;
+  margin-top: 3px;
+}
+
+.customer-record-status {
+  white-space: nowrap;
+  font-size: .78rem;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.customer-record-status.active {
+  background: #eaf7ef;
+  color: #167245;
+}
+
+.customer-record-status.taken {
+  background: #fdecec;
+  color: #b42318;
+}
+
+.customer-results-empty {
+  padding: 18px;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #64748b;
+  text-align: center;
+}
+
+@media (max-width: 576px) {
+  .customer-results-panel { padding: 15px; border-radius: 15px; }
+  .customer-results-header { display: block; }
+  .customer-record-option {
+    grid-template-columns: 1fr auto;
+    gap: 9px 12px;
+  }
+  .customer-record-serial { justify-self: start; }
+  .customer-record-status { grid-column: 2; grid-row: 1; }
+  .customer-record-main { grid-column: 1 / -1; }
+}

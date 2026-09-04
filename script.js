@@ -1570,6 +1570,296 @@ Thank you 🙏
   }
 
   // ============================================================
+  // CUSTOMER / PHONE / SERIAL SEARCH
+  // ============================================================
+
+  function normalizeSearch(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase();
+  }
+
+  function normalizePhone(value) {
+    return String(value || "").replace(/\D/g, "");
+  }
+
+  function recordFromRow(row) {
+    const record = {};
+    headers.forEach((header, i) => {
+      record[header] = row[i] || "";
+    });
+    return record;
+  }
+
+  function searchRecords(query) {
+    const resultDiv = document.getElementById("result");
+    const customerResults = document.getElementById("customerSearchResults");
+    const value = normalizeSearch(query);
+
+    if (!value) {
+      customerResults.innerHTML = "";
+      resultDiv.innerHTML = "";
+      return;
+    }
+
+    const rows = cachedData && cachedData.values
+      ? cachedData.values.slice(1)
+      : [];
+
+    const numericQuery = value.replace(/\s/g, "");
+    const phoneQuery = normalizePhone(value);
+
+    // ----------------------------------------------------------
+    // EXACT SERIAL SEARCH
+    // ----------------------------------------------------------
+    // Keep the original serial-number workflow unchanged. If the
+    // user enters an exact serial, open that record directly,
+    // including an already-taken record.
+    const exactSerial = rows.find(row =>
+      String(row[0] || "").trim() === numericQuery
+    );
+
+    if (exactSerial) {
+      customerResults.innerHTML = "";
+      fetchRecord(numericQuery);
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // CUSTOMER / PHONE SEARCH
+    // ----------------------------------------------------------
+    // For name/phone searches we intentionally exclude taken
+    // records. A customer search should only present records that
+    // still need attention / are currently active.
+    const activeMatches = rows
+      .map(recordFromRow)
+      .filter(record => !hasTakenDate(record))
+      .filter(record => {
+        const name = normalizeSearch(record["Name"]);
+        const phone = normalizePhone(record["Ph. No"]);
+
+        return (
+          (value.length >= 2 && name.includes(value)) ||
+          (phoneQuery.length >= 4 && phone.includes(phoneQuery))
+        );
+      });
+
+    if (!activeMatches.length) {
+      customerResults.innerHTML = `
+        <div class="customer-results-panel">
+          <div class="customer-results-empty">
+            <i class="bi bi-person-x me-1"></i>
+            No active records found for this customer or phone number.
+          </div>
+        </div>`;
+      resultDiv.innerHTML = "";
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // GROUP BY CUSTOMER IDENTITY
+    // ----------------------------------------------------------
+    // When the search is a phone number, the phone number is the
+    // customer identity. Do NOT use address (or name) to split the
+    // same phone into multiple customers. This is important because
+    // the same customer may have small address/name formatting
+    // differences across old records.
+    //
+    // When the search is a name, use normalized name + phone. If a
+    // phone number is missing, fall back to the address only for
+    // disambiguation of identical names with no phone information.
+    const groups = new Map();
+    const isPhoneSearch = phoneQuery.length >= 4 &&
+      activeMatches.some(record => normalizePhone(record["Ph. No"]).includes(phoneQuery));
+
+    activeMatches.forEach(record => {
+      const name = String(record["Name"] || "Customer").trim() || "Customer";
+      const phone = String(record["Ph. No"] || "").trim();
+      const normalizedPhone = normalizePhone(phone);
+      const address = String(record["City"] || "").trim();
+
+      let key;
+
+      if (isPhoneSearch && normalizedPhone) {
+        // Phone search: same phone = same customer identity.
+        key = `phone:${normalizedPhone}`;
+      } else {
+        const normalizedName = normalizeSearch(name);
+
+        if (normalizedPhone) {
+          // Name search: same normalized name + phone = same customer.
+          key = `name-phone:${normalizedName}|${normalizedPhone}`;
+        } else {
+          // No phone available: only then use address as a secondary
+          // discriminator for identical names.
+          key = `name-address:${normalizedName}|${normalizeSearch(address)}`;
+        }
+      }
+
+      if (!groups.has(key)) {
+        groups.set(key, {
+          name,
+          phone,
+          address,
+          records: []
+        });
+      }
+
+      const group = groups.get(key);
+      group.records.push(record);
+
+      // Prefer a non-empty customer name/address if the first matching
+      // row did not contain one. This does not affect record data.
+      if ((!group.name || group.name === "Customer") && name) {
+        group.name = name;
+      }
+      if (!group.phone && phone) {
+        group.phone = phone;
+      }
+      if (!group.address && address) {
+        group.address = address;
+      }
+    });
+
+    const customerGroups = Array.from(groups.values());
+
+    // One active customer identity: open their active records.
+    if (customerGroups.length === 1) {
+      renderActiveRecordOptions(customerGroups[0], customerResults, resultDiv);
+      return;
+    }
+
+    // Multiple active customer identities: ask first.
+    renderCustomerIdentityOptions(customerGroups, customerResults, resultDiv);
+  }
+
+  function renderCustomerIdentityOptions(groups, customerResults, resultDiv) {
+    customerResults.innerHTML = `
+      <section class="customer-results-panel">
+        <div class="customer-results-header">
+          <div>
+            <h2 class="customer-results-title">
+              <i class="bi bi-people-fill me-1"></i>
+              Multiple Customers Found
+            </h2>
+            <p class="customer-results-meta">
+              ${groups.length} different active customers match your search. Select the correct customer first.
+            </p>
+          </div>
+          <span class="badge text-bg-light">Active records only</span>
+        </div>
+        <div class="customer-record-list">
+          ${groups.map((group, index) => `
+            <button type="button" class="customer-record-option customer-identity-option" data-customer-group="${index}">
+              <span class="customer-record-serial">
+                <i class="bi bi-person-fill"></i>
+              </span>
+              <span class="customer-record-main">
+                <strong>${escapeHtml(group.name)}</strong>
+                <span>
+                  ${group.records.length} active record${group.records.length === 1 ? "" : "s"}
+                  ${group.phone ? ` · ${escapeHtml(group.phone)}` : ""}
+                  ${group.address ? ` · ${escapeHtml(group.address)}` : ""}
+                </span>
+              </span>
+              <span class="customer-record-status active">Select <i class="bi bi-chevron-right"></i></span>
+            </button>`).join("")}
+        </div>
+      </section>`;
+
+    resultDiv.innerHTML = "";
+
+    customerResults
+      .querySelectorAll("[data-customer-group]")
+      .forEach(button => {
+        button.addEventListener("click", () => {
+          const index = Number(button.getAttribute("data-customer-group"));
+          const group = groups[index];
+          if (!group) return;
+
+          renderActiveRecordOptions(group, customerResults, resultDiv);
+        });
+      });
+  }
+
+  function renderActiveRecordOptions(group, customerResults, resultDiv) {
+    const records = group.records.filter(record => !hasTakenDate(record));
+
+    if (!records.length) {
+      customerResults.innerHTML = `
+        <div class="customer-results-panel">
+          <div class="customer-results-empty">
+            <i class="bi bi-person-x me-1"></i>
+            No active records found for this customer.
+          </div>
+        </div>`;
+      resultDiv.innerHTML = "";
+      return;
+    }
+
+    customerResults.innerHTML = `
+      <section class="customer-results-panel">
+        <div class="customer-results-header">
+          <div>
+            <h2 class="customer-results-title">
+              <i class="bi bi-person-lines-fill me-1"></i>
+              ${escapeHtml(group.name)}
+            </h2>
+            <p class="customer-results-meta">
+              ${records.length} active record${records.length === 1 ? "" : "s"}
+              ${group.phone ? ` · ${escapeHtml(group.phone)}` : ""}
+            </p>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge text-bg-success">Active only</span>
+            <button type="button" class="btn btn-sm btn-light customer-back-btn" aria-label="Choose another customer">
+              <i class="bi bi-arrow-left me-1"></i>Back
+            </button>
+          </div>
+        </div>
+        <div class="customer-record-list">
+          ${records.map(record => {
+            const serial = String(record["Serial no."] || "").trim();
+            const item = record["Item"] || "No item";
+            const amount = parseAmount(record["Amount"]);
+            const date = record["Date"] || "";
+            return `
+              <button type="button" class="customer-record-option" data-customer-serial="${escapeHtml(serial)}">
+                <span class="customer-record-serial">#${escapeHtml(serial)}</span>
+                <span class="customer-record-main">
+                  <strong>${escapeHtml(item)}</strong>
+                  <span>${escapeHtml(date)} · ₹${Math.round(amount).toLocaleString("en-IN")}</span>
+                </span>
+                <span class="customer-record-status active">Active <i class="bi bi-chevron-right"></i></span>
+              </button>`;
+          }).join("")}
+        </div>
+      </section>`;
+
+    resultDiv.innerHTML = "";
+
+    customerResults
+      .querySelectorAll("[data-customer-serial]")
+      .forEach(button => {
+        button.addEventListener("click", () => {
+          const serial = button.getAttribute("data-customer-serial");
+          document.getElementById("serialInput").value = serial;
+          customerResults.innerHTML = "";
+          fetchRecord(serial);
+        });
+      });
+
+    const backButton = customerResults.querySelector(".customer-back-btn");
+    if (backButton) {
+      backButton.addEventListener("click", () => {
+        // Re-run the original search so the user sees the same
+        // customer choices without changing the search text.
+        searchRecords(document.getElementById("serialInput").value.trim());
+      });
+    }
+  }
+
+  // ============================================================
   // INITIALIZE
   // ============================================================
 
@@ -1584,11 +1874,28 @@ Thank you 🙏
       e => {
         e.preventDefault();
 
-        fetchRecord(
-          document.getElementById(
-            "serialInput"
-          ).value
-        );
+        const query = document.getElementById("serialInput").value.trim();
+        if (!query) return;
+
+        if (!cachedData) {
+          const resultDiv = document.getElementById("result");
+          resultDiv.innerHTML = "<div class=\"text-center py-4 text-muted\">Loading records...</div>";
+          fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}&_=${Date.now()}`,
+            { cache: "no-store" }
+          )
+            .then(res => res.json())
+            .then(data => {
+              cachedData = data;
+              searchRecords(query);
+            })
+            .catch(error => {
+              console.error("Google Sheets error:", error);
+              resultDiv.innerHTML = "Unable to load records.";
+            });
+        } else {
+          searchRecords(query);
+        }
       }
     );
 
