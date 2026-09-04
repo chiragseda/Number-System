@@ -1164,6 +1164,64 @@ Thank you 🙏
   };
 
   // ============================================================
+  // EXISTING-RECORD PRINT SUPPORT
+  // Presentation-only helper: uses the existing print area.
+  // ============================================================
+
+  function numberToIndianWordsForPrint(number) {
+    number = Math.floor(Number(number));
+    if (!Number.isFinite(number) || number < 0) return "";
+    if (number === 0) return "Zero";
+
+    const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+    const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+    const underHundred = n => n < 20 ? ones[n] : tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "");
+    const underThousand = n => n < 100 ? underHundred(n) : ones[Math.floor(n / 100)] + " Hundred" + (n % 100 ? " " + underHundred(n % 100) : "");
+
+    let result = "";
+    const crore = Math.floor(number / 10000000); number %= 10000000;
+    const lakh = Math.floor(number / 100000); number %= 100000;
+    const thousand = Math.floor(number / 1000); number %= 1000;
+    if (crore) result += underThousand(crore) + " Crore ";
+    if (lakh) result += underThousand(lakh) + " Lakh ";
+    if (thousand) result += underThousand(thousand) + " Thousand ";
+    if (number) result += underThousand(number);
+    return result.trim();
+  }
+
+  function setPrintText(id, value) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value == null ? "" : String(value);
+  }
+
+  function printExistingRecord(record) {
+    const amount = parseAmount(record["Amount"]);
+    const date = formatDate(parseDate(record["Date"])) || String(record["Date"] || "");
+    const amountWords = numberToIndianWordsForPrint(amount) + " Only";
+    const values = {
+      Serial: record["Serial no."], Phone: record["Ph. No"], Name: record["Name"],
+      Address: record["City"], Item: record["Item"], EstimatedWeight: "",
+      GoldWeight: record["खਾਲਸ ਸੋਨਾ"] || record["ਖਾਲਸ ਸੋਨਾ"] || "", Amount: amount ? amount.toLocaleString("en-IN") + "/-" : "", Date: date, AmountWords: amountWords
+    };
+
+    ["Customer", "Office"].forEach(copy => {
+      setPrintText("printSerial" + copy, values.Serial);
+      setPrintText("printPhone" + copy, values.Phone);
+      setPrintText("printName" + copy, values.Name);
+      setPrintText("printAddress" + copy, values.Address ? "(" + values.Address + ")" : "");
+      setPrintText("printItem" + copy, values.Item);
+      setPrintText("printEstimatedWeight" + copy, values.EstimatedWeight);
+      setPrintText("printGoldWeight" + copy, values.GoldWeight);
+      setPrintText("printAmount" + copy, values.Amount);
+      setPrintText("printDate" + copy, values.Date);
+      setPrintText("printAmountWords" + copy, values.AmountWords);
+    });
+
+    window.print();
+  }
+
+  // ============================================================
   // FETCH RECORD
   // ============================================================
 
@@ -1175,7 +1233,8 @@ Thank you 🙏
 
     if (!cachedData) {
       fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`
+        `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}&_=${Date.now()}`,
+        { cache: "no-store" }
       )
         .then(res => res.json())
         .then(data => {
@@ -1240,118 +1299,181 @@ Thank you 🙏
       );
 
       // ========================================================
-      // RECORD CARD
+      // RESPONSIVE DASHBOARD RENDER
       // ========================================================
 
-      const alreadyTaken =
-        hasTakenDate(record);
+      const initialAmount = parseAmount(record["Amount"]);
+      const payments = parseEntries(record["P.Pmt"]);
+      const extras = parseEntries(record["හੋਰ"] || record["ਹੋਰ"]);
+      const calculation = calculateFull(record);
+      const totalPayments = payments.reduce((sum, item) => sum + item.amount, 0);
+      const totalExtras = extras.reduce((sum, item) => sum + item.amount, 0);
 
-      const takenDateText =
-        alreadyTaken
-          ? formatTakenDate(
-              record["Taken"]
-            )
-          : "";
+      const money = value =>
+        `₹${Math.round(Number(value) || 0).toLocaleString("en-IN")}`;
 
-      let html =
-        `<div class="record-card">
+      const displayValue = (value, fallback = "—") =>
+        String(value || "").trim() ? escapeHtml(value) : fallback;
 
-          <div id="takenStatus"
-               class="taken-status ${
-                 alreadyTaken
-                   ? "taken"
-                   : "active"
-               }">
+      const infoCard = (icon, title, rows) => `
+        <details class="info-card" open>
+          <summary><i class="bi ${icon}"></i><span>${title}</span></summary>
+          <div class="info-body">
+            ${rows.map(([label, value]) => `
+              <div class="info-row field">
+                <span class="label ${label === "P.Pmt" || label === "Other" ? "compatibility-label" : ""}" ${label === "P.Pmt" ? 'data-display="Part Payment"' : label === "Other" ? 'data-display="Extra Amount"' : ""}>${label}</span>
+                <span class="value ${value === "—" ? "value-empty" : ""}">${value}</span>
+              </div>
+            `).join("")}
+          </div>
+        </details>`;
 
-            ${
-              alreadyTaken
-                ? `🔴 <b>TAKEN</b> — ${escapeHtml(
-                    takenDateText
-                  )}`
-                : `🟢 <b>ACTIVE</b>`
+      const ledgerRows = calculation
+        ? calculation.steps.map((step, index) => {
+            let type = "interest";
+            let typeLabel = "Interest";
+            let description = "";
+            let amount = "—";
+            let interest = "—";
+            let principalAfter = "—";
+            let outstanding = "—";
+
+            if (step.type === "start") {
+              type = "original";
+              typeLabel = "Original";
+              description = "Initial Amount";
+              amount = money(step.amount);
+              principalAfter = money(step.amount);
+              outstanding = money(step.amount);
+            } else if (step.type === "initialExtra") {
+              type = "extra";
+              typeLabel = "Extra";
+              description = `Extra Amount within 7-day adjustment (${formatDate(step.date)})`;
+              amount = `+${money(step.amount)}`;
+              principalAfter = money(step.afterPrincipal);
+              outstanding = money(step.afterPrincipal);
+            } else if (step.type === "interest") {
+              type = "interest";
+              typeLabel = "Interest";
+              description = `${formatDate(step.from)} → ${formatDate(step.to)} · ${step.months} month${step.months === 1 ? "" : "s"} @ ${step.rate}%`;
+              interest = `+${money(step.interest)}`;
+              principalAfter = money(step.principalAfter);
+              outstanding = money(step.principalAfter + step.interestOutstanding);
+            } else if (step.type === "extra") {
+              type = "extra";
+              typeLabel = "Extra";
+              description = `Extra Amount (${formatDate(step.date)})`;
+              amount = `+${money(step.amount)}`;
+              principalAfter = money(step.afterPrincipal);
+              outstanding = money(step.afterPrincipal + step.interestOutstanding);
+            } else if (step.type === "payment") {
+              type = "payment";
+              typeLabel = "Payment";
+              description = `Part Payment (${formatDate(step.date)}) · Interest paid ${money(step.interestPaid)}`;
+              amount = `-${money(step.amount)}`;
+              principalAfter = money(step.afterPrincipal);
+              outstanding = money(step.afterPrincipal + step.interestOutstanding);
             }
 
+            return `<tr>
+              <td>${index + 1}</td>
+              <td>${formatDate(step.date || step.to)}</td>
+              <td><span class="type-badge type-${type}">${typeLabel}</span></td>
+              <td>${escapeHtml(description)}</td>
+              <td class="amount">${amount}</td>
+              <td class="amount">${interest}</td>
+              <td class="amount">${principalAfter}</td>
+              <td class="amount">${outstanding}</td>
+            </tr>`;
+          }).join("")
+        : `<tr><td colspan="8" class="text-center text-muted py-4">Calculate interest to generate the transaction ledger.</td></tr>`;
+
+      const alreadyTaken = hasTakenDate(record);
+      const takenDateText = alreadyTaken ? formatTakenDate(record["Taken"]) : "";
+
+      let html = `
+        <section class="record-card">
+          <div class="record-head">
+            <div class="record-title-wrap">
+              <i class="bi bi-file-earmark-text record-icon"></i>
+              <div>
+                <h2 class="record-title">Record Details</h2>
+                <span id="takenStatus" class="status-pill ${alreadyTaken ? "status-taken" : "status-active"}">
+                  <i class="bi ${alreadyTaken ? "bi-circle-fill" : "bi-check-circle-fill"}"></i>
+                  ${alreadyTaken ? `TAKEN · ${escapeHtml(takenDateText)}` : "ACTIVE"}
+                </span>
+              </div>
+            </div>
+            <div class="record-meta"><strong>Record #${escapeHtml(record["Serial no."])}</strong>Created on ${escapeHtml(formatDate(parseDate(record["Date"])) || record["Date"])}</div>
           </div>
 
-          <div class="fields-grid">`;
-
-      headers.forEach(header => {
-        html += `
-          <div class="field">
-
-            <div class="label">
-              ${escapeHtml(header)}
-            </div>
-
-            <div class="value">
-              ${escapeHtml(
-                record[header]
-              )}
-            </div>
-
+          <div class="info-grid">
+            ${infoCard("bi-person-fill", "Customer Information", [
+              ["Name", displayValue(record["Name"])],
+              ["Address / City", displayValue(record["City"])],
+              ["Phone", displayValue(record["Ph. No"])]
+            ])}
+            ${infoCard("bi-calendar3", "Transaction Details", [
+              ["Date", displayValue(formatDate(parseDate(record["Date"])) || record["Date"])],
+              ["Item", displayValue(record["Item"])],
+              ["Amount", money(initialAmount)],
+              ["Interest Rate", displayValue(record["Int."])]
+            ])}
+            ${infoCard("bi-box-seam-fill", "Gold Details", [
+              ["Pure Gold Weight", displayValue(record["खालस ਸੋਨਾ"] || record["ਖਾਲਸ ਸੋਨਾ"], "—")],
+              ["Estimated Weight", "—"]
+            ])}
+            ${infoCard("bi-file-text-fill", "Other Information", [
+              ["Other", totalExtras ? money(totalExtras) : "—"],
+              ["P.Pmt", totalPayments ? money(totalPayments) : "—"],
+              ["Notes", displayValue(record["Notes"])],
+              ["Taken", alreadyTaken ? escapeHtml(takenDateText) : "Not Taken"]
+            ])}
           </div>
-        `;
-      });
 
-      html += `
-        <div class="field important action-field">
+          <div class="action-bar">
+            <button class="dashboard-btn calc-btn" id="calcBtn" type="button"><i class="bi bi-calculator"></i><span>Calculate Interest</span></button>
+            <button class="dashboard-btn payment-btn part-payment-btn" type="button" data-serial="${escapeHtml(record["Serial no."])}"><i class="bi bi-currency-rupee"></i><span>Add Part Payment</span></button>
+            <button class="dashboard-btn extra-btn extra-amount-btn" type="button" data-serial="${escapeHtml(record["Serial no."])}"><i class="bi bi-plus-lg"></i><span>Add Extra Amount</span></button>
+            ${alreadyTaken
+              ? `<button class="taken-done-btn" id="takenBtn" type="button" disabled><i class="bi bi-check-circle-fill"></i><span>Taken on ${escapeHtml(takenDateText)}</span></button>`
+              : `<button class="taken-action-btn" id="takenBtn" type="button"><i class="bi bi-check-circle-fill"></i><span>Mark as Taken</span></button>`}
+            <button class="dashboard-btn whatsapp-btn" id="whatsappBtn" type="button"><i class="bi bi-whatsapp"></i><span>Send via WhatsApp</span></button>
+            <button class="dashboard-btn print-btn" id="printBtn" type="button"><i class="bi bi-printer-fill"></i><span>Print Slips</span></button>
+          </div>
+        </section>
 
-          ${
-            alreadyTaken
-
-              ? `<button
-                   class="taken-done-btn"
-                   id="takenBtn"
-                   disabled>
-                   Taken on ${escapeHtml(
-                     takenDateText
-                   )}
-                 </button>`
-
-              : `<button
-                   class="taken-action-btn"
-                   id="takenBtn">
-                   Mark as Taken
-                 </button>`
-          }
-
-          <button
-            class="pp-btn"
-            id="calcBtn"
-          >
-            Calculate Interest
-          </button>
-
-          <button
-            class="part-payment-btn"
-            type="button"
-            data-serial="${escapeHtml(
-              record["Serial no."]
-            )}"
-          >
-            Part Payment
-          </button>
-
-          <button
-            class="extra-amount-btn"
-            type="button"
-            data-serial="${escapeHtml(
-              record["Serial no."]
-            )}"
-          >
-            Extra Amount
-          </button>
-
+        <div class="lower-grid">
+          <section class="summary-panel">
+            <h3 class="section-title"><i class="bi bi-bar-chart-fill"></i>Interest Summary</h3>
+            <div class="metric-grid">
+              <div class="metric principal"><div class="metric-label">Principal Amount</div><div class="metric-value">${money(calculation ? calculation.principal : initialAmount)}</div></div>
+              <div class="metric interest"><div class="metric-label">Total Interest</div><div class="metric-value">${calculation ? money(calculation.totalInterest) : "—"}</div></div>
+              <div class="metric payments"><div class="metric-label">Total Payments</div><div class="metric-value">${money(totalPayments)}</div></div>
+              <div class="metric outstanding"><div class="metric-label">Current Outstanding</div><div class="metric-value">${calculation ? money(calculation.finalAmount) : "—"}</div></div>
+            </div>
+          </section>
+          <aside class="quick-panel">
+            <h3 class="section-title"><i class="bi bi-lightning-charge-fill"></i>Quick Actions</h3>
+            <div class="quick-actions">
+              <button type="button" class="quick-action-btn" id="refreshRecordBtn"><i class="bi bi-arrow-clockwise"></i><span>Refresh Record</span></button>
+              <button type="button" class="quick-action-btn" id="quickNewRecordBtn"><i class="bi bi-plus-lg"></i><span>New Record</span></button>
+            </div>
+          </aside>
         </div>
+
+        <section class="ledger-panel">
+          <h3 class="section-title"><i class="bi bi-list-columns-reverse"></i>Transaction Ledger</h3>
+          <div class="ledger-wrap">
+            <table class="ledger-table">
+              <thead><tr><th>#</th><th>Date</th><th>Type</th><th>Description</th><th>Amount (₹)</th><th>Interest (₹)</th><th>Principal (₹)</th><th>Outstanding (₹)</th></tr></thead>
+              <tbody>${ledgerRows}</tbody>
+            </table>
+          </div>
+        </section>
       `;
 
-      html += `
-          </div>
-        </div>
-      `;
-
-      resultDiv.innerHTML =
-        html;
+      resultDiv.innerHTML = html;
 
       document.getElementById(
         "calcBtn"
@@ -1373,6 +1495,75 @@ Thank you 🙏
             record,
             takenBtn
           );
+        };
+      }
+
+      const whatsappBtn = document.getElementById("whatsappBtn");
+      if (whatsappBtn) {
+        whatsappBtn.onclick = () => {
+          const currentCalculation = calculateFull(record);
+          if (!currentCalculation) {
+            alert("Unable to calculate the record details.");
+            return;
+          }
+          sendWhatsApp(record, currentCalculation);
+        };
+      }
+
+      const printBtn = document.getElementById("printBtn");
+      if (printBtn) {
+        printBtn.onclick = () => printExistingRecord(record);
+      }
+
+      const refreshRecordBtn = document.getElementById("refreshRecordBtn");
+      if (refreshRecordBtn) {
+        refreshRecordBtn.onclick = async () => {
+          const serial = String(
+            (lastRecord && lastRecord["Serial no."]) ||
+            document.getElementById("serialInput")?.value ||
+            record["Serial no."] ||
+            ""
+          ).trim();
+
+          if (!serial) {
+            return;
+          }
+
+          const icon = refreshRecordBtn.querySelector("i");
+          const label = refreshRecordBtn.querySelector("span");
+          const originalLabel = label ? label.textContent : "Refresh Record";
+
+          refreshRecordBtn.disabled = true;
+          refreshRecordBtn.classList.add("is-refreshing");
+          if (icon) icon.classList.add("spin");
+          if (label) label.textContent = "Refreshing...";
+
+          try {
+            // Discard the in-memory Sheet cache so the record is read again.
+            cachedData = null;
+
+            // Re-fetch the same record without reloading the page. This keeps
+            // the current search, scroll position and UI state intact.
+            await fetchRecord(serial);
+          } finally {
+            const currentButton = document.getElementById("refreshRecordBtn");
+            if (currentButton) {
+              currentButton.disabled = false;
+              currentButton.classList.remove("is-refreshing");
+              const currentIcon = currentButton.querySelector("i");
+              const currentLabel = currentButton.querySelector("span");
+              if (currentIcon) currentIcon.classList.remove("spin");
+              if (currentLabel) currentLabel.textContent = originalLabel;
+            }
+          }
+        };
+      }
+
+      const quickNewRecordBtn = document.getElementById("quickNewRecordBtn");
+      if (quickNewRecordBtn) {
+        quickNewRecordBtn.onclick = () => {
+          const newRecordButton = document.getElementById("openNewRecordBtn");
+          if (newRecordButton) newRecordButton.click();
         };
       }
     }
@@ -1400,6 +1591,14 @@ Thank you 🙏
         );
       }
     );
+
+    const navNewRecordBtn = document.getElementById("navNewRecordBtn");
+    if (navNewRecordBtn) {
+      navNewRecordBtn.onclick = () => {
+        const newRecordButton = document.getElementById("openNewRecordBtn");
+        if (newRecordButton) newRecordButton.click();
+      };
+    }
 
     // ----------------------------------------------------------
     // CLOSE MODAL

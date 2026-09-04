@@ -1,414 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1"
-  />
-
-  <title>Record Viewer</title>
-
-  <link
-    rel="stylesheet"
-    href="style.css"
-  />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b3a5b" />
+  <title>BK Jewellers | Record Viewer</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
-
-  <div class="container">
-
-    <h1>Record Lookup</h1>
-
-    <!-- ======================================================
-         EXISTING SEARCH SYSTEM
-         ====================================================== -->
-
-    <form
-      id="searchForm"
-      class="controls"
-    >
-
-      <input
-        id="serialInput"
-        type="text"
-        placeholder="Enter Serial No."
-        required
-      />
-
-      <button type="submit">
-        Search
-      </button>
-
-    </form>
-
-
-    <!-- ======================================================
-         NEW RECORD BUTTON
-         ====================================================== -->
-
-    <div class="new-record-toolbar">
-
-      <button
-        type="button"
-        id="openNewRecordBtn"
-        class="new-record-main-btn"
-      >
-        + New Record
-      </button>
-
+  <header class="app-header">
+    <div class="container-fluid app-header-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><i class="bi bi-gem"></i></div>
+        <div class="brand-copy">
+          <div class="brand-title">BK JEWELLERS <span>| Record Viewer</span></div>
+          <div class="brand-subtitle">Trust • Purity • Relationships</div>
+        </div>
+      </div>
+      <nav class="top-nav" aria-label="Primary navigation">
+        <a class="top-nav-link" href="#top"><i class="bi bi-house-door-fill"></i><span>Home</span></a>
+        <button type="button" class="top-nav-link" id="navNewRecordBtn"><i class="bi bi-plus-lg"></i><span>New Record</span></button>
+        <a class="top-nav-link active" href="#result"><i class="bi bi-card-list"></i><span>Record Viewer</span></a>
+      </nav>
+      <div class="header-right">
+        <div class="header-motto">Trust <span>|</span> Purity <span>|</span> Relationships</div>
+        <button type="button" id="openNewRecordBtn" class="new-record-main-btn" aria-label="Add new record">
+          <i class="bi bi-plus-lg" aria-hidden="true"></i><span>New Record</span>
+        </button>
+      </div>
     </div>
+  </header>
 
+  <main id="top" class="container-fluid app-shell">
+    <section class="search-hero row g-3" aria-label="Record search">
+      <div class="col-12 col-xl-9">
+        <div class="search-panel h-100">
+          <div class="search-heading"><i class="bi bi-search"></i><h1>Find Your Record</h1></div>
+          <p class="search-help">Enter the serial number to view customer details, payments and calculate interest.</p>
+          <form id="searchForm" class="controls row g-2">
+            <div class="col-12 col-md"><input id="serialInput" class="form-control" type="text" inputmode="numeric" autocomplete="off" placeholder="Enter Serial Number" aria-label="Serial number" required /></div>
+            <div class="col-12 col-md-auto"><button class="search-btn" type="submit"><i class="bi bi-search me-1"></i>Search</button></div>
+          </form>
+        </div>
+      </div>
+      <div class="col-12 col-xl-3">
+        <aside class="brand-panel h-100" aria-label="BK Jewellers message">
+          <div class="brand-panel-title"><i class="bi bi-gem"></i><span>BK JEWELLERS</span></div>
+          <p class="brand-panel-tagline">Gold Today. Relationships Forever.</p>
+          <p class="brand-panel-quote">“Your trust is our true wealth.”</p>
+        </aside>
+      </div>
+    </section>
 
-    <div
-      id="headerStrip"
-      class="header-strip"
-    ></div>
-
-
+    <div id="headerStrip" class="header-strip"></div>
     <div id="result"></div>
+  </main>
 
-  </div>
-
-
-  <!-- ========================================================
-       EXISTING PART PAYMENT MODAL
-       ======================================================== -->
-
-  <div
-    id="ppModal"
-    class="modal"
-  >
-
+  <div id="ppModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="ppModalTitle">
     <div class="modal-content">
-
-      <span id="closeModal">
-        &times;
-      </span>
-
-      <h3>
-        Part Payments
-      </h3>
-
+      <button id="closeModal" class="modal-close" type="button" aria-label="Close">&times;</button>
+      <h3 id="ppModalTitle">Detailed Ledger</h3>
       <div id="ppContent"></div>
-
     </div>
-
   </div>
 
-
-  <!-- ========================================================
-       NEW RECORD MODAL
-       ======================================================== -->
-
-  <div
-    id="newRecordModal"
-    class="modal new-record-modal"
-  >
-
+  <div id="newRecordModal" class="modal new-record-modal" role="dialog" aria-modal="true" aria-labelledby="newRecordTitle">
     <div class="modal-content new-record-content">
-
-      <span
-        id="closeNewRecordModal"
-        class="new-record-close"
-      >
-        &times;
-      </span>
-
-
-      <h2>
-        Add New Record
-      </h2>
-
-
+      <button id="closeNewRecordModal" class="new-record-close" type="button" aria-label="Close">&times;</button>
+      <h2 id="newRecordTitle"><i class="bi bi-plus-circle me-2"></i>Add New Record</h2>
       <form id="newRecordForm">
-
-
-        <!-- SERIAL / DATE -->
-
         <div class="new-record-row">
-
-          <div class="new-record-field">
-
-            <label>
-              Serial No.
-            </label>
-
-            <input
-              id="newSerial"
-              type="text"
-              readonly
-              placeholder="Automatic"
-            />
-
-          </div>
-
-
-          <div class="new-record-field">
-
-            <label>
-              Date
-            </label>
-
-            <input
-              id="newDate"
-              type="text"
-              readonly
-            />
-
-          </div>
-
+          <div class="new-record-field"><label for="newSerial">Serial No.</label><input id="newSerial" type="text" readonly placeholder="Automatic" /></div>
+          <div class="new-record-field"><label for="newDate">Date</label><input id="newDate" type="text" readonly /></div>
         </div>
-
-
-        <!-- CUSTOMER NAME -->
-
-        <div class="new-record-field">
-
-          <label>
-            Customer Name
-          </label>
-
-          <input
-            id="newCustomerName"
-            type="text" 
-            required
-          />
-
-        </div>
-
-
-        <!-- RELATION -->
-
+        <div class="new-record-field"><label for="newCustomerName">Customer Name</label><input id="newCustomerName" type="text" required /></div>
         <div class="new-record-row">
-
-          <div class="new-record-field">
-
-            <label>
-              Relation
-            </label>
-
-            <select
-              id="newRelation"
-            >
-
-              <option value="">
-                Select
-              </option>
-
-              <option value="s/o">
-                S/o
-              </option>
-
-              <option value="w/o">
-                W/o
-              </option>
-
-              <option value="d/o">
-                D/o
-              </option>
-
-              <option value="c/o">
-                C/o
-              </option>
-
-            </select>
-
-          </div>
-
-
-          <div class="new-record-field">
-
-            <label>
-              Related Person Name
-            </label>
-
-            <input
-              id="newRelatedName"
-              type="text"
-            />
-
-          </div>
-
+          <div class="new-record-field"><label for="newRelation">Relation</label><select id="newRelation"><option value="">Select</option><option value="s/o">S/o</option><option value="w/o">W/o</option><option value="d/o">D/o</option><option value="c/o">C/o</option></select></div>
+          <div class="new-record-field"><label for="newRelatedName">Related Person Name</label><input id="newRelatedName" type="text" /></div>
         </div>
-
-
-        <!-- ADDRESS -->
-
-        <div class="new-record-field">
-
-          <label>
-            Address
-          </label>
-
-          <input
-            id="newAddress"
-            type="text"
-            required
-          />
-
-        </div>
-
-
-        <!-- ITEM -->
-
-        <div class="new-record-field">
-
-          <label>
-            Item
-          </label>
-
-          <input
-            id="newItem"
-            type="text"
-            required
-          />
-
-        </div>
-
-
-        <!-- AMOUNT -->
-
+        <div class="new-record-field"><label for="newAddress">Address</label><input id="newAddress" type="text" required /></div>
+        <div class="new-record-field"><label for="newItem">Item</label><input id="newItem" type="text" required /></div>
         <div class="new-record-row">
-
-          <div class="new-record-field">
-
-            <label>
-              Amount Given
-            </label>
-
-            <input
-              id="newAmount"
-              type="number"
-              min="0"
-              step="1"
-              required
-            />
-
-          </div>
-
-
-          <div class="new-record-field">
-
-            <label>
-              Interest
-            </label>
-
-            <input
-              id="newInterest"
-              type="text"
-              value="2%"
-              readonly
-            />
-
-          </div>
-
+          <div class="new-record-field"><label for="newAmount">Amount Given</label><input id="newAmount" type="number" min="0" step="1" required /></div>
+          <div class="new-record-field"><label for="newInterest">Interest</label><input id="newInterest" type="text" value="2%" readonly /></div>
         </div>
-
-
-        <!-- GOLD WEIGHT -->
-
         <div class="new-record-row">
-
-          <div class="new-record-field">
-
-            <label>
-              Pure Gold Weight — Sheet
-            </label>
-
-            <input
-              id="newPureGoldWeight"
-              type="text"
-              required
-            />
-
-          </div>
-
-
-          <div class="new-record-field">
-
-            <label>
-              Estimated Weight — Slip Only
-            </label>
-
-            <input
-              id="newEstimatedWeight"
-              type="text"
-              required
-            />
-
-          </div>
-
+          <div class="new-record-field"><label for="newPureGoldWeight">Pure Gold Weight — Sheet</label><input id="newPureGoldWeight" type="text" required /></div>
+          <div class="new-record-field"><label for="newEstimatedWeight">Estimated Weight — Slip Only</label><input id="newEstimatedWeight" type="text" required /></div>
         </div>
-
-
-        <!-- PHONE -->
-
-        <div class="new-record-field">
-
-          <label>
-            Phone Number
-          </label>
-
-          <input
-            id="newPhone"
-            type="tel"
-            required
-          />
-
-        </div>
-
-
-        <!-- AMOUNT WORDS PREVIEW -->
-
-        <div class="amount-words-preview">
-
-          <span>
-            Amount in words:
-          </span>
-
-          <strong id="amountWordsPreview">
-            —
-          </strong>
-
-        </div>
-
-
-        <!-- BUTTONS -->
-
+        <div class="new-record-field"><label for="newPhone">Phone Number</label><input id="newPhone" type="tel" inputmode="tel" required /></div>
+        <div class="amount-words-preview"><span>Amount in words:</span><strong id="amountWordsPreview">—</strong></div>
         <div class="new-record-actions">
-
-          <button
-            type="submit"
-            id="saveNewRecordBtn"
-            class="save-new-record-btn"
-          >
-            Save & Print Slips
-          </button>
-
-
-          <button
-            type="button"
-            id="cancelNewRecordBtn"
-            class="cancel-new-record-btn"
-          >
-            Cancel
-          </button>
-
+          <button type="submit" id="saveNewRecordBtn" class="save-new-record-btn"><i class="bi bi-printer me-1"></i>Save &amp; Print Slips</button>
+          <button type="button" id="cancelNewRecordBtn" class="cancel-new-record-btn">Cancel</button>
         </div>
-
-
       </form>
-
     </div>
-
   </div>
-
-
-  <!-- ========================================================
-       PRINT AREA
-       ======================================================== -->
 
   <div
     id="printArea"
@@ -617,31 +308,9 @@
 
   </div>
 
-
-  <!-- ========================================================
-       EXISTING SCRIPT — DO NOT MODIFY
-       ======================================================== -->
-
   <script src="script.js"></script>
-
-
-  <!-- ========================================================
-       NEW RECORD SYSTEM
-       ======================================================== -->
-
   <script src="new-record.js"></script>
-
-  <!-- ========================================================
-      Part Payment
-      ======================================================== -->
-
   <script src="PartPayment.js"></script>
-
-  <!-- ========================================================
-      Extra Amount
-      ======================================================== -->
-
   <script src="ExtraAmount.js"></script>
-
 </body>
 </html>
