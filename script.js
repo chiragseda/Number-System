@@ -13,6 +13,13 @@
   let lastResult = null;
   let lastRecord = null;
 
+  // ============================================================
+  // COMBINED CALCULATOR
+  // Additive feature only. It deliberately reuses calculateFull()
+  // and never changes the existing interest-calculation logic.
+  // ============================================================
+  const combinedCalculationRecords = new Map();
+
   const headers = [
     "Serial no.",
     "Date",
@@ -1222,6 +1229,222 @@ Thank you 🙏
   }
 
   // ============================================================
+  // COMBINED CALCULATOR HELPERS
+  // ============================================================
+
+  function getCombinedCalculationRows() {
+    return Array.from(combinedCalculationRecords.values());
+  }
+
+  function getCombinedCalculationSummary() {
+    const rows = getCombinedCalculationRows();
+    let principal = 0;
+    let interest = 0;
+    let finalAmount = 0;
+
+    rows.forEach(record => {
+      // IMPORTANT: this is the existing calculation engine.
+      // No duplicate interest formula is introduced here.
+      const calculation = calculateFull(record);
+      if (!calculation) return;
+
+      principal += Number(calculation.principal) || 0;
+      interest += Number(calculation.totalInterest) || 0;
+      finalAmount += Number(calculation.finalAmount) || 0;
+    });
+
+    return { principal, interest, finalAmount };
+  }
+
+  function renderCombinedCalculator() {
+    const rows = getCombinedCalculationRows();
+    const summary = getCombinedCalculationSummary();
+
+    const money = value =>
+      `₹${Math.round(Number(value) || 0).toLocaleString("en-IN")}`;
+
+    if (!rows.length) {
+      return `
+        <section class="combined-calculator-panel combined-calculator-empty" id="combinedCalculatorPanel">
+          <div class="combined-calculator-head">
+            <div>
+              <h3><i class="bi bi-calculator-fill"></i> Calculation Basket</h3>
+              <p>Add multiple record numbers here to calculate them together.</p>
+            </div>
+            <span class="combined-count">0 records</span>
+          </div>
+          <div class="combined-empty-message">
+            <i class="bi bi-plus-circle"></i>
+            <span>Fetch a record and click <strong>+ Add to Calculation</strong>.</span>
+          </div>
+        </section>`;
+    }
+
+    const recordRows = rows.map(record => {
+      const calculation = calculateFull(record);
+      const serial = String(record["Serial no."] || "").trim();
+      const name = String(record["Name"] || "Customer").trim() || "Customer";
+      const item = String(record["Item"] || "No item").trim() || "No item";
+      const total = calculation ? calculation.finalAmount : 0;
+
+      return `
+        <div class="combined-record-row">
+          <div class="combined-record-main">
+            <span class="combined-serial">#${escapeHtml(serial)}</span>
+            <div>
+              <strong>${escapeHtml(name)}</strong>
+              <small>${escapeHtml(item)}</small>
+            </div>
+          </div>
+          <div class="combined-record-total">${money(total)}</div>
+          <button type="button" class="combined-remove-btn" data-combined-remove="${escapeHtml(serial)}" aria-label="Remove record ${escapeHtml(serial)} from calculation">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>`;
+    }).join("");
+
+    return `
+      <section class="combined-calculator-panel" id="combinedCalculatorPanel">
+        <div class="combined-calculator-head">
+          <div>
+            <h3><i class="bi bi-calculator-fill"></i> Calculation Basket</h3>
+            <p>Each record is calculated using the existing interest logic, then the results are combined.</p>
+          </div>
+          <span class="combined-count">${rows.length} record${rows.length === 1 ? "" : "s"}</span>
+        </div>
+
+        <div class="combined-record-list">
+          ${recordRows}
+        </div>
+
+        <div class="combined-summary-grid">
+          <div class="combined-summary-item">
+            <span>Total Principal</span>
+            <strong>${money(summary.principal)}</strong>
+          </div>
+          <div class="combined-summary-item">
+            <span>Total Interest</span>
+            <strong>${money(summary.interest)}</strong>
+          </div>
+          <div class="combined-summary-item combined-summary-grand">
+            <span>Combined Amount Payable</span>
+            <strong>${money(summary.finalAmount)}</strong>
+          </div>
+        </div>
+
+        <div class="combined-calculator-actions">
+          <button type="button" class="combined-clear-btn" id="combinedClearBtn">
+            <i class="bi bi-trash3"></i><span>Clear All</span>
+          </button>
+          <span class="combined-calculator-note">
+            No record data is changed by this calculator.
+          </span>
+        </div>
+      </section>`;
+  }
+
+  function refreshCombinedCalculatorUI() {
+    const panel = document.getElementById("combinedCalculatorPanel");
+    if (!panel) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = renderCombinedCalculator().trim();
+    const nextPanel = wrapper.firstElementChild;
+    if (!nextPanel) return;
+
+    panel.replaceWith(nextPanel);
+    bindCombinedCalculatorEvents();
+  }
+
+  function bindCombinedCalculatorEvents() {
+    const panel = document.getElementById("combinedCalculatorPanel");
+    if (!panel) return;
+
+    panel.querySelectorAll("[data-combined-remove]").forEach(button => {
+      button.addEventListener("click", () => {
+        const serial = String(button.getAttribute("data-combined-remove") || "").trim();
+        if (!serial) return;
+
+        combinedCalculationRecords.delete(serial);
+        refreshCombinedCalculatorUI();
+        updateCurrentCombinedAddButton();
+      });
+    });
+
+    const clearButton = panel.querySelector("#combinedClearBtn");
+    if (clearButton) {
+      clearButton.addEventListener("click", () => {
+        combinedCalculationRecords.clear();
+        refreshCombinedCalculatorUI();
+        updateCurrentCombinedAddButton();
+      });
+    }
+  }
+
+  function updateCurrentCombinedAddButton() {
+    const button = document.getElementById("combinedAddBtn");
+    if (!button || !lastRecord) return;
+
+    const serial = String(lastRecord["Serial no."] || "").trim();
+    const alreadyAdded = serial && combinedCalculationRecords.has(serial);
+
+    button.disabled = Boolean(alreadyAdded);
+    button.classList.toggle("is-added", Boolean(alreadyAdded));
+
+    const icon = button.querySelector("i");
+    const label = button.querySelector("span");
+
+    if (icon) {
+      icon.className = alreadyAdded ? "bi bi-check-circle-fill" : "bi bi-calculator";
+    }
+    if (label) {
+      label.textContent = alreadyAdded ? "Added to Calculation" : "+ Add to Calculation";
+    }
+  }
+
+  function addRecordToCombinedCalculation(record) {
+    if (!record) return;
+
+    const serial = String(record["Serial no."] || "").trim();
+    if (!serial) {
+      alert("This record does not have a valid serial number.");
+      return;
+    }
+
+    if (!calculateFull(record)) {
+      alert("Unable to calculate this record with the existing calculation rules.");
+      return;
+    }
+
+    if (combinedCalculationRecords.has(serial)) {
+      updateCurrentCombinedAddButton();
+      return;
+    }
+
+    combinedCalculationRecords.set(serial, { ...record });
+    refreshCombinedCalculatorUI();
+    updateCurrentCombinedAddButton();
+
+    const panel = document.getElementById("combinedCalculatorPanel");
+    if (panel) {
+      panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }
+
+  function ensureCombinedCalculatorPanel() {
+    const resultDiv = document.getElementById("result");
+    if (!resultDiv) return;
+
+    let panel = document.getElementById("combinedCalculatorPanel");
+    if (!panel) {
+      resultDiv.insertAdjacentHTML("afterbegin", renderCombinedCalculator());
+      panel = document.getElementById("combinedCalculatorPanel");
+    }
+
+    bindCombinedCalculatorEvents();
+  }
+
+  // ============================================================
   // FETCH RECORD
   // ============================================================
 
@@ -1306,6 +1529,8 @@ Thank you 🙏
       const payments = parseEntries(record["P.Pmt"]);
       const extras = parseEntries(record["හੋਰ"] || record["ਹੋਰ"]);
       const calculation = calculateFull(record);
+      lastRecord = record;
+      lastResult = calculation;
       const totalPayments = payments.reduce((sum, item) => sum + item.amount, 0);
       const totalExtras = extras.reduce((sum, item) => sum + item.amount, 0);
 
@@ -1433,6 +1658,7 @@ Thank you 🙏
 
           <div class="action-bar">
             <button class="dashboard-btn calc-btn" id="calcBtn" type="button"><i class="bi bi-calculator"></i><span>Calculate Interest</span></button>
+            <button class="dashboard-btn combined-add-btn" id="combinedAddBtn" type="button"><i class="bi bi-calculator"></i><span>+ Add to Calculation</span></button>
             <button class="dashboard-btn payment-btn part-payment-btn" type="button" data-serial="${escapeHtml(record["Serial no."])}"><i class="bi bi-currency-rupee"></i><span>Add Part Payment</span></button>
             <button class="dashboard-btn extra-btn extra-amount-btn" type="button" data-serial="${escapeHtml(record["Serial no."])}"><i class="bi bi-plus-lg"></i><span>Add Extra Amount</span></button>
             ${alreadyTaken
@@ -1442,6 +1668,8 @@ Thank you 🙏
             <button class="dashboard-btn print-btn" id="printBtn" type="button"><i class="bi bi-printer-fill"></i><span>Print Slips</span></button>
           </div>
         </section>
+
+        ${renderCombinedCalculator()}
 
         <div class="lower-grid">
           <section class="summary-panel">
@@ -1474,6 +1702,16 @@ Thank you 🙏
       `;
 
       resultDiv.innerHTML = html;
+
+      bindCombinedCalculatorEvents();
+      updateCurrentCombinedAddButton();
+
+      const combinedAddBtn = document.getElementById("combinedAddBtn");
+      if (combinedAddBtn) {
+        combinedAddBtn.onclick = () => {
+          addRecordToCombinedCalculation(record);
+        };
+      }
 
       document.getElementById(
         "calcBtn"
