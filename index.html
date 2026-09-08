@@ -53,8 +53,13 @@
 
     <!-- ======================================================
          LIVE GOLD RATE + RISK ANALYSIS DASHBOARD
-         Additive UI only. Existing record viewer remains intact.
+         Record details appear immediately after search; dashboard follows below.
          ====================================================== -->
+    <div id="headerStrip" class="header-strip"></div>
+    <div id="customerSearchResults" class="customer-search-results" aria-live="polite"></div>
+    <div id="result"></div>
+
+
     <section class="risk-dashboard-tools" id="riskAnalysisSection" aria-label="Gold rate, portfolio totals and risk analysis">
       <article class="gold-rate-card" id="goldRateCard">
         <div class="compact-card-head">
@@ -159,10 +164,6 @@
       </div>
       <div class="risk-results-note" id="riskResultsNote"></div>
     </section>
-
-    <div id="headerStrip" class="header-strip"></div>
-    <div id="customerSearchResults" class="customer-search-results" aria-live="polite"></div>
-    <div id="result"></div>
   </main>
 
   <div id="ppModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="ppModalTitle">

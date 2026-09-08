@@ -2707,13 +2707,6 @@ Thank you 🙏
     const riskPrevPageBtn = document.getElementById("riskPrevPageBtn");
     const riskNextPageBtn = document.getElementById("riskNextPageBtn");
 
-    if (navRiskAnalysisBtn) {
-      navRiskAnalysisBtn.onclick = () => {
-        const section = document.getElementById("riskAnalysisSection");
-        if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
-      };
-    }
-
     if (runRiskAnalysisBtn) {
       runRiskAnalysisBtn.onclick = runRiskAnalysis;
     }
