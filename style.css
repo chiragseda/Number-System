@@ -588,10 +588,6 @@
 /* ============================================================
    FINAL DASHBOARD POLISH — UI ONLY
    ============================================================ */
-.top-nav{display:flex;align-items:center;gap:4px;margin-left:auto;margin-right:8px}
-.top-nav-link{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:0;border-radius:9px;background:transparent;color:#fff;text-decoration:none;font:inherit;font-size:14px;font-weight:700;white-space:nowrap;opacity:.94;cursor:pointer}
-.top-nav-link:hover{background:rgba(255,255,255,.09);color:#fff}
-.top-nav-link.active{background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
 .top-nav-link i{font-size:15px}
 .header-right{display:flex;align-items:center;gap:18px}
 .header-motto{display:none;color:#fff;font-size:13px;white-space:nowrap;opacity:.95}
@@ -962,4 +958,295 @@
   .combined-summary-grand{grid-column:auto;border-top:0}
   .combined-calculator-actions{padding:0 14px 14px;align-items:flex-start;flex-direction:column;gap:8px}
   .combined-clear-btn{min-height:44px}
+}
+
+/* ============================================================
+   LIVE GOLD RATE + RISK ANALYSIS
+   Additive dashboard styling. Existing UI styles are untouched.
+   ============================================================ */
+ .risk-dashboard-tools{
+  margin-top:18px;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;
+}
+.gold-rate-card,.gold-value-settings-card,.active-portfolio-card,.active-gold-value-card,.risk-launch-card,.risk-results-panel{
+  background:#fff;border:1px solid #dce6ef;border-radius:14px;box-shadow:0 5px 18px rgba(23,60,88,.055);
+}
+.gold-rate-card,.gold-value-settings-card,.active-portfolio-card,.active-gold-value-card{min-width:0;overflow:hidden}
+.compact-card-head{min-height:58px;padding:11px 13px;display:flex;align-items:center;gap:9px;border-bottom:1px solid #edf2f6}
+.gold-rate-icon,.settings-icon,.portfolio-icon,.gold-value-icon,.risk-launch-icon{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto}
+.gold-rate-icon{background:#fff8e8;color:#d99b1f;border:1px solid #f2dfaa;font-size:19px}
+.settings-icon{background:#edf6ff;color:#176fe5;border:1px solid #cbe3fa;font-size:17px}
+.portfolio-icon{background:#eef8ff;color:#1687c9;border:1px solid #cce9f8;font-size:17px}
+.gold-value-icon{background:#fff8e8;color:#d99b1f;border:1px solid #f2dfaa;font-size:17px}
+.gold-rate-kicker,.risk-launch-kicker,.risk-results-kicker{color:#6b8094;font-size:9px;font-weight:900;letter-spacing:.1em}
+.gold-rate-card h2,.gold-value-settings-card h2,.active-portfolio-card h2,.active-gold-value-card h2,.risk-launch-card h2,.risk-results-panel h2{margin:1px 0 0;color:#173554;font-weight:900}
+.gold-rate-card h2,.gold-value-settings-card h2,.active-portfolio-card h2,.active-gold-value-card h2{font-size:15px}
+.gold-rate-card h2 span{font-size:10px;font-weight:700;color:#7890a5}
+.gold-rate-status{margin-left:auto;white-space:nowrap;border-radius:999px;padding:5px 7px;background:#f2f5f8;color:#6b7d8e;font-size:9px;font-weight:850}
+.gold-rate-status.is-live{background:#eaf7ef;color:#167245}.gold-rate-status.is-loading{background:#fff6df;color:#9a6700}
+.gold-rate-values{display:grid;grid-template-columns:1fr 1px 1fr;align-items:stretch;padding:12px 13px 8px}
+.gold-rate-value-box{min-width:0;padding:3px 9px}.gold-rate-value-box:first-child{padding-left:0}.gold-rate-value-box:last-child{padding-right:0}
+.gold-rate-value-box span{display:block;color:#657b8f;font-size:10px;font-weight:750;margin-bottom:3px}
+.gold-rate-value-box strong{display:block;color:#173554;font-size:21px;line-height:1.1;font-weight:950;white-space:nowrap}
+.gold-rate-value-box.with-gst strong{color:#b47708}.gold-rate-value-box small{display:block;margin-top:2px;color:#8a9aaa;font-size:9px}
+.gold-rate-divider{width:1px;height:40px;background:#dce6ef;align-self:center}
+.gold-rate-footer{display:flex;justify-content:space-between;gap:8px;padding:8px 13px 10px;color:#8193a3;font-size:9px;border-top:1px solid #edf2f6}
+.gold-rate-source{font-weight:800;color:#587189}
+.valuation-setting{padding:13px}.valuation-setting label{display:block;color:#657b8f;font-size:10px;font-weight:800;margin-bottom:6px}
+.deduction-display{height:39px;display:flex;align-items:center;gap:6px;border:1px solid #dce6ef;border-radius:9px;padding:0 10px;background:#fbfdff}
+.deduction-display span{color:#8193a3;font-size:12px;font-weight:800}
+.deduction-display input{
+  width:100%;min-width:0;border:0;outline:0;background:transparent;
+  color:#173554;font-size:17px;font-weight:950;padding:0;font-family:inherit;
+}
+.deduction-display input:focus{box-shadow:none}
+.deduction-display input::-webkit-outer-spin-button,
+.deduction-display input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.deduction-display input[type=number]{-moz-appearance:textfield}
+.deduction-equivalent{display:inline-block;margin-top:7px;padding:4px 7px;border-radius:6px;background:#edf6ff;color:#1768b8;font-size:9px;font-weight:850}
+.valuation-setting p{margin:7px 0 0;color:#8193a3;font-size:9px;line-height:1.4}.settings-info{margin-left:auto;color:#8ca0b1;font-size:12px}
+.active-portfolio-card .compact-card-head small{margin-left:auto;color:#8193a3;font-size:8px;font-weight:750;white-space:nowrap}
+.portfolio-total-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 13px;border-bottom:1px solid #edf2f6}
+.portfolio-total-row:last-child{border-bottom:0}.portfolio-total-row span{color:#657b8f;font-size:10px;font-weight:750}.portfolio-total-row strong{color:#173554;font-size:17px;font-weight:950;white-space:nowrap}
+.gold-value-metric{padding:10px 13px 7px}.gold-value-metric span,.gold-value-total span{display:block;color:#657b8f;font-size:10px;font-weight:750}
+.gold-value-metric strong{display:block;margin-top:3px;color:#173554;font-size:18px;font-weight:950;white-space:nowrap}.gold-value-metric small,.gold-value-total small{display:block;margin-top:2px;color:#8193a3;font-size:8px}
+.gold-value-total{margin:5px 10px 10px;padding:9px 10px;border:1px solid #f1dfad;border-radius:9px;background:#fff8e5}
+.gold-value-total strong{display:block;margin-top:2px;color:#173554;font-size:19px;font-weight:950;white-space:nowrap}
+.risk-launch-card{grid-column:1 / -1;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.risk-launch-copy{display:flex;gap:11px;align-items:center}.risk-launch-icon{background:#edf6ff;color:#176fe5;border:1px solid #cbe3fa;font-size:19px}
+.risk-launch-card h2{font-size:18px}.risk-launch-card p{margin:3px 0 0;color:#6b8094;font-size:11px;line-height:1.4}
+.risk-run-btn{min-height:40px;width:300px;max-width:35%;border:0;border-radius:9px;background:#1677e8;color:#fff;font-weight:850;font-size:12px;display:inline-flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 4px 10px rgba(22,119,232,.18);cursor:pointer}
+.risk-run-btn:hover{background:#1268cc}.risk-run-btn:disabled{opacity:.65;cursor:wait}
+.risk-results-panel{
+  background:#fff;
+  border:1px solid #dce6ef;
+  border-radius:18px;
+  box-shadow:0 8px 28px rgba(23,60,88,.07);
+}
+.gold-rate-card{overflow:hidden}
+.gold-rate-card-head{
+  min-height:76px;
+  padding:15px 18px;
+  display:flex;
+  align-items:center;
+  gap:13px;
+  background:linear-gradient(180deg,#f7fbff,#edf6fd);
+  border-bottom:1px solid #e0eaf2;
+}
+.gold-rate-icon,.risk-launch-icon{
+  width:46px;height:46px;border-radius:13px;
+  display:grid;place-items:center;flex:0 0 auto;
+}
+.gold-rate-icon{background:#fff8e8;color:#d99b1f;border:1px solid #f2dfaa;font-size:22px}
+.gold-rate-kicker,.risk-launch-kicker,.risk-results-kicker{
+  color:#6b8094;font-size:11px;font-weight:900;letter-spacing:.12em;
+}
+.gold-rate-card h2,.risk-launch-card h2,.risk-results-panel h2{
+  margin:2px 0 0;color:#173554;font-weight:900;
+}
+.gold-rate-card h2{font-size:18px}
+.gold-rate-card h2 span{font-size:12px;font-weight:700;color:#7890a5}
+.gold-rate-status{
+  margin-left:auto;white-space:nowrap;
+  border-radius:999px;padding:6px 10px;
+  background:#f2f5f8;color:#6b7d8e;
+  font-size:11px;font-weight:850;
+}
+.gold-rate-status.is-live{background:#eaf7ef;color:#167245}
+.gold-rate-status.is-loading{background:#fff6df;color:#9a6700}
+.gold-rate-values{display:grid;grid-template-columns:1fr 1px 1fr;align-items:stretch;padding:16px 18px 12px}
+.gold-rate-value-box{min-width:0;padding:4px 14px}
+.gold-rate-value-box:first-child{padding-left:0}
+.gold-rate-value-box:last-child{padding-right:0}
+.gold-rate-value-box span{display:block;color:#657b8f;font-size:12px;font-weight:750;margin-bottom:4px}
+.gold-rate-value-box strong{display:block;color:#173554;font-size:25px;line-height:1.1;font-weight:950;white-space:nowrap}
+.gold-rate-value-box.with-gst strong{color:#b47708}
+.gold-rate-value-box small{display:block;margin-top:3px;color:#8a9aaa;font-size:11px}
+.gold-rate-divider{width:1px;height:48px;background:#dce6ef;align-self:center}
+.gold-rate-footer{display:flex;justify-content:space-between;gap:12px;padding:10px 18px 14px;color:#71869a;font-size:11px;border-top:1px solid #edf2f6}
+.gold-rate-footer i{margin-right:4px}
+.gold-rate-source{font-weight:800;color:#587189}
+.risk-launch-card{padding:18px;display:flex;flex-direction:column;justify-content:space-between;gap:18px}
+.risk-launch-copy{display:flex;gap:13px;align-items:flex-start}
+.risk-launch-icon{background:#edf6ff;color:#176fe5;border:1px solid #cbe3fa;font-size:22px}
+.risk-launch-card h2{font-size:21px}
+.risk-launch-card p{margin:5px 0 0;color:#6b8094;font-size:13px;line-height:1.5}
+.risk-run-btn{
+  min-height:44px;width:100%;border:0;border-radius:10px;
+  background:#1677e8;color:#fff;font-weight:850;font-size:14px;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 5px 13px rgba(22,119,232,.2);cursor:pointer;
+}
+.risk-run-btn:hover{background:#1268cc}
+.risk-run-btn:disabled{opacity:.65;cursor:wait}
+.risk-results-panel{margin-top:18px;overflow:hidden}
+.risk-results-panel[hidden]{display:none}
+.risk-results-head{padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:15px;background:linear-gradient(180deg,#f7fbff,#edf6fd);border-bottom:1px solid #dce7f0}
+.risk-results-panel h2{font-size:21px}
+.risk-results-panel h2 i{color:#176fe5;margin-right:6px}
+.risk-results-head p{margin:4px 0 0;color:#6b8094;font-size:12px}
+.risk-refresh-btn{border:1px solid #bdd9f4;background:#fff;color:#1268c9;border-radius:9px;padding:9px 13px;font-weight:800;cursor:pointer}
+.active-portfolio-summary{
+  margin:18px;
+  padding:14px 15px;
+  border:1px solid #e1e9f0;
+  border-radius:13px;
+  background:#fbfdff;
+}
+.active-portfolio-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+.active-portfolio-head span{
+  color:#6b8094;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.1em;
+}
+.active-portfolio-head small{
+  color:#8193a3;
+  font-size:10px;
+  font-weight:700;
+}
+.active-portfolio-values{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.active-portfolio-value{
+  min-width:0;
+}
+.active-portfolio-value span{
+  display:block;
+  color:#657b8f;
+  font-size:11px;
+  font-weight:750;
+  margin-bottom:3px;
+}
+.active-portfolio-value strong{
+  display:block;
+  color:#173554;
+  font-size:21px;
+  line-height:1.15;
+  font-weight:950;
+  white-space:nowrap;
+}
+.active-portfolio-value small{
+  display:block;
+  margin-top:3px;
+  color:#8193a3;
+  font-size:9px;
+  font-weight:700;
+}
+@media(max-width:576px){
+  .risk-dashboard-tools{grid-template-columns:1fr}
+  .risk-launch-card{grid-column:auto;align-items:stretch;flex-direction:column}
+  .risk-run-btn{width:100%;max-width:none}
+  .risk-summary-grid{grid-template-columns:1fr}
+}
+.risk-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;padding:12px 15px}
+.risk-summary-item{padding:10px 11px;border:1px solid #e1e9f0;border-radius:9px;background:#fbfdff}
+.risk-summary-item span{display:block;color:#71869a;font-size:11px;font-weight:750}
+.risk-summary-item strong{display:block;margin-top:3px;color:#173554;font-size:18px;font-weight:950}
+.risk-table-wrap{overflow-x:auto;border-top:1px solid #edf2f6}
+.risk-table{width:100%;border-collapse:collapse;min-width:850px}
+.risk-table th{padding:9px 11px;background:#f7fafc;color:#587189;text-align:left;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #dfe8ef}
+.risk-table td{padding:9px 11px;color:#29445e;font-size:13px;border-bottom:1px solid #edf2f6;vertical-align:middle}
+.risk-table tbody tr:hover{background:#fbfdff}
+.risk-table .money{font-weight:850;white-space:nowrap}
+.risk-table .serial{font-weight:900;color:#173554}
+.risk-customer{font-weight:800;color:#173554}.risk-customer small{display:block;margin-top:2px;color:#8193a3;font-weight:600}
+.risk-badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:6px 10px;font-size:10px;font-weight:950;letter-spacing:.03em}
+.risk-high{background:#fdebec;color:#b42318}.risk-medium{background:#fff5df;color:#9a6700}.risk-low{background:#eaf7ef;color:#167245}.risk-unknown{background:#eef2f6;color:#66788a}
+.risk-results-note{padding:12px 20px 15px;color:#71869a;font-size:11px;background:#fbfdff}
+.risk-results-note strong{color:#506a80}
+@media(max-width:1100px){
+  .risk-dashboard-tools{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:900px){
+  .risk-summary-grid{grid-template-columns:1fr 1fr}
+  .risk-run-btn{max-width:42%}
+}
+@media(max-width:576px){
+  .gold-rate-card-head{align-items:flex-start;flex-wrap:wrap}
+  .gold-rate-status{margin-left:59px;margin-top:-7px}
+  .gold-rate-values{grid-template-columns:1fr;padding:13px 16px}
+  .gold-rate-value-box,.gold-rate-value-box:first-child,.gold-rate-value-box:last-child{padding:8px 0}
+  .gold-rate-divider{width:100%;height:1px}
+  .gold-rate-footer{display:block}.gold-rate-source{display:block;margin-top:5px}
+  .risk-results-head{display:block}.risk-refresh-btn{margin-top:12px}
+  .risk-summary-grid{grid-template-columns:1fr 1fr;padding:12px}
+}
+
+
+.risk-pagination{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:14px 20px;
+  border-top:1px solid #edf2f6;
+  background:#fbfdff;
+}
+.risk-page-btn,
+.risk-page-number{
+  min-width:38px;
+  height:36px;
+  padding:0 12px;
+  border:1px solid #cfe0ee;
+  border-radius:8px;
+  background:#fff;
+  color:#24506f;
+  font-size:12px;
+  font-weight:850;
+  cursor:pointer;
+}
+.risk-page-btn:hover:not(:disabled),
+.risk-page-number:hover{
+  background:#f1f7fc;
+  border-color:#a9c9e2;
+}
+.risk-page-btn:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+.risk-page-numbers{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+.risk-page-ellipsis{
+  min-width:20px;
+  height:36px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  color:#8193a3;
+  font-size:12px;
+  font-weight:900;
+}
+.risk-page-number.is-active{
+  background:#176fe5;
+  border-color:#176fe5;
+  color:#fff;
+}
+@media(max-width:576px){
+  .risk-pagination{
+    padding:12px;
+    gap:6px;
+  }
+  .risk-page-btn{
+    min-width:72px;
+  }
+  .risk-page-number{
+    min-width:34px;
+    padding:0 8px;
+  }
 }

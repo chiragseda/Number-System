@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b3a5b" />
   <title>BK Jewellers | Record Viewer</title>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23145a82'/%3E%3Cpath d='M32 10 49 24 32 54 15 24Z' fill='none' stroke='%23ffd900' stroke-width='5'/%3E%3Cpath d='m15 24 17 4 17-4M24 34h16' fill='none' stroke='%23ffd900' stroke-width='4'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
@@ -20,11 +21,6 @@
           <div class="brand-subtitle">Trust • Purity • Relationships</div>
         </div>
       </div>
-      <nav class="top-nav" aria-label="Primary navigation">
-        <a class="top-nav-link" href="#top"><i class="bi bi-house-door-fill"></i><span>Home</span></a>
-        <button type="button" class="top-nav-link" id="navNewRecordBtn"><i class="bi bi-plus-lg"></i><span>New Record</span></button>
-        <a class="top-nav-link active" href="#result"><i class="bi bi-card-list"></i><span>Record Viewer</span></a>
-      </nav>
       <div class="header-right">
         <div class="header-motto">Trust <span>|</span> Purity <span>|</span> Relationships</div>
         <button type="button" id="openNewRecordBtn" class="new-record-main-btn" aria-label="Add new record">
@@ -53,6 +49,115 @@
           <p class="brand-panel-quote">“Your trust is our true wealth.”</p>
         </aside>
       </div>
+    </section>
+
+    <!-- ======================================================
+         LIVE GOLD RATE + RISK ANALYSIS DASHBOARD
+         Additive UI only. Existing record viewer remains intact.
+         ====================================================== -->
+    <section class="risk-dashboard-tools" id="riskAnalysisSection" aria-label="Gold rate, portfolio totals and risk analysis">
+      <article class="gold-rate-card" id="goldRateCard">
+        <div class="compact-card-head">
+          <div class="gold-rate-icon"><i class="bi bi-gem"></i></div>
+          <div>
+            <div class="gold-rate-kicker">LIVE GOLD RATE</div>
+            <h2>24K Gold <span>• India</span></h2>
+          </div>
+          <span class="gold-rate-status" id="goldRateStatus"><i class="bi bi-dot"></i> Not loaded</span>
+        </div>
+        <div class="gold-rate-values">
+          <div class="gold-rate-value-box"><span>Without GST</span><strong id="goldRateWithoutGst">—</strong><small>per gram</small></div>
+          <div class="gold-rate-divider" aria-hidden="true"></div>
+          <div class="gold-rate-value-box with-gst"><span>With 3% GST</span><strong id="goldRateWithGst">—</strong><small>per gram</small></div>
+        </div>
+        <div class="gold-rate-footer">
+          <span id="goldRateUpdated"><i class="bi bi-clock"></i> Loading...</span>
+          <span class="gold-rate-source">Refreshes every 1 min</span>
+        </div>
+      </article>
+
+      <article class="gold-value-settings-card">
+        <div class="compact-card-head">
+          <div class="settings-icon"><i class="bi bi-sliders"></i></div>
+          <div><div class="gold-rate-kicker">VALUATION SETTING</div><h2>Gold Value</h2></div>
+          <i class="bi bi-info-circle settings-info" title="Applied only to gold valuation"></i>
+        </div>
+        <div class="valuation-setting">
+          <label>Deduction per 10 grams</label>
+          <div class="deduction-display">
+            <span>₹</span>
+            <input id="goldValuationDeduction" type="number" min="0" step="100" value="3000" inputmode="numeric" aria-label="Gold valuation deduction per 10 grams">
+          </div>
+          <div class="deduction-equivalent" id="goldValuationDeductionEquivalent">= ₹300 per gram</div>
+          <p>Used for Total Gold Value and Risk Analysis.</p>
+        </div>
+      </article>
+
+      <article class="active-portfolio-card">
+        <div class="compact-card-head">
+          <div class="portfolio-icon"><i class="bi bi-calculator"></i></div>
+          <div><div class="gold-rate-kicker">ACTIVE LOAN PORTFOLIO</div><h2>Investment</h2></div>
+          <small id="activePortfolioMeta">Loading...</small>
+        </div>
+        <div class="portfolio-total-row"><span>Without Interest</span><strong id="activeInvestedWithoutInterest">—</strong></div>
+        <div class="portfolio-total-row"><span>With Interest</span><strong id="activeInvestedWithInterest">—</strong></div>
+      </article>
+
+      <article class="active-gold-value-card">
+        <div class="compact-card-head">
+          <div class="gold-value-icon"><i class="bi bi-bar-chart-line"></i></div>
+          <div><div class="gold-rate-kicker">TOTAL GOLD VALUE</div><h2>Active Records</h2></div>
+        </div>
+        <div class="gold-value-metric">
+          <span>Effective Rate</span><strong id="activeEffectiveGoldRate">—</strong>
+          <small>after ₹3,000 / 10g deduction</small>
+        </div>
+        <div class="gold-value-total">
+          <span>Estimated Gold Value</span><strong id="activeTotalGoldValue">—</strong>
+          <small id="activeTotalGoldValueMeta">At adjusted 24K rate</small>
+        </div>
+      </article>
+
+      <article class="risk-launch-card">
+        <div class="risk-launch-copy">
+          <div class="risk-launch-icon"><i class="bi bi-shield-check"></i></div>
+          <div><div class="risk-launch-kicker">ACTIVE RECORD REVIEW</div><h2>Risk Analysis</h2><p>Check active loans against the adjusted gold value. Taken records are excluded.</p></div>
+        </div>
+        <button type="button" class="risk-run-btn" id="runRiskAnalysisBtn"><i class="bi bi-shield-check"></i><span>Run Risk Analysis</span></button>
+      </article>
+    </section>
+
+    <section class="risk-results-panel" id="riskResultsPanel" hidden aria-live="polite">
+      <div class="risk-results-head">
+        <div>
+          <div class="risk-results-kicker">RISK ANALYSIS</div>
+          <h2><i class="bi bi-shield-check"></i> Active Loan Risk Review</h2>
+          <p id="riskResultsMeta">Reviewing active records only.</p>
+        </div>
+        <button type="button" class="risk-refresh-btn" id="riskRerunBtn"><i class="bi bi-arrow-repeat"></i> Run Again</button>
+      </div>
+      <div class="risk-summary-grid" id="riskSummaryGrid"></div>
+      <div class="risk-table-wrap">
+        <table class="risk-table">
+          <thead>
+            <tr>
+              <th>Serial</th>
+              <th>Customer</th>
+              <th>Outstanding</th>
+              <th>Pure Gold</th>
+              <th>Gold Value</th>
+              <th>Risk</th>
+            </tr>
+          </thead>
+          <tbody id="riskTableBody"></tbody>
+        </table>
+      </div>
+      <div class="risk-pagination" id="riskPagination" hidden aria-label="Risk analysis pages">
+        <button type="button" class="risk-page-btn" id="riskPrevPageBtn">Previous</button>
+        <div class="risk-page-numbers" id="riskPageNumbers"></div>
+        <button type="button" class="risk-page-btn" id="riskNextPageBtn">Next</button>
+      </div>
+      <div class="risk-results-note" id="riskResultsNote"></div>
     </section>
 
     <div id="headerStrip" class="header-strip"></div>

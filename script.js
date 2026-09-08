@@ -2098,10 +2098,566 @@ Thank you 🙏
   }
 
   // ============================================================
+  // RISK ANALYSIS + LIVE GOLD RATE
+  // Additive feature only. Existing record calculations/searches
+  // are not modified.
+  // ============================================================
+
+  // Uses the EXISTING Google Apps Script backend.
+  // No Node.js server and no API key in the browser.
+  const RISK_GOLD_API_URL = TAKEN_API_URL;
+  const RISK_GST_RATE = 0.03;
+  const GOLD_VALUATION_DEDUCTION_DEFAULT = 3000;
+  const GOLD_VALUATION_DEDUCTION_STORAGE_KEY = "bkGoldValuationDeductionPer10g";
+
+  function getGoldValuationDeductionPer10g() {
+    const saved = Number(localStorage.getItem(GOLD_VALUATION_DEDUCTION_STORAGE_KEY));
+    return Number.isFinite(saved) && saved >= 0
+      ? saved
+      : GOLD_VALUATION_DEDUCTION_DEFAULT;
+  }
+
+  function updateGoldValuationSettingUI(value) {
+    const input = document.getElementById("goldValuationDeduction");
+    const equivalentEl = document.getElementById("goldValuationDeductionEquivalent");
+    const amount = Math.max(0, Number(value) || 0);
+
+    if (input && document.activeElement !== input) {
+      input.value = Math.round(amount);
+    }
+
+    if (equivalentEl) {
+      equivalentEl.textContent =
+        `= ₹${Math.round(amount / 10).toLocaleString("en-IN")} per gram`;
+    }
+  }
+
+  function initGoldValuationSetting() {
+    const input = document.getElementById("goldValuationDeduction");
+    if (!input) return;
+
+    const saved = getGoldValuationDeductionPer10g();
+    updateGoldValuationSettingUI(saved);
+
+    const applyValue = () => {
+      const value = Math.max(0, Number(input.value) || 0);
+      input.value = Math.round(value);
+      localStorage.setItem(
+        GOLD_VALUATION_DEDUCTION_STORAGE_KEY,
+        String(value)
+      );
+      updateGoldValuationSettingUI(value);
+
+      if (riskGoldRate !== null) {
+        refreshActivePortfolioTotals(riskGoldRate);
+      }
+    };
+
+    input.addEventListener("input", applyValue);
+    input.addEventListener("change", applyValue);
+  }
+
+  const RISK_OFFLINE_MODE =
+    new URLSearchParams(window.location.search).get("offline") === "1";
+  const RISK_OFFLINE_GOLD_RATE = 10000;
+
+  // Keep the dashboard gold rate fresh even when Risk Analysis is not run.
+  // One request per minute stays within the provider's documented rate limit.
+  const GOLD_RATE_REFRESH_MS = 60 * 1000;
+
+  let riskGoldRate = null;
+  const RISK_PAGE_SIZE = 5;
+  let riskAnalyses = [];
+  let riskCurrentPage = 1;
+
+  function moneyRisk(value) {
+    const number = Number(value) || 0;
+    return "₹" + Math.round(number).toLocaleString("en-IN");
+  }
+
+  function parseGoldWeight(value) {
+    const match = String(value || "").replace(/,/g, "").match(/[0-9]+(?:\.[0-9]+)?/);
+    return match ? Number(match[0]) : 0;
+  }
+
+  function setGoldRateCard(rate, updatedText, mode = "live") {
+    const withoutGst = Number(rate) || 0;
+    const withGst = withoutGst * (1 + RISK_GST_RATE);
+    riskGoldRate = withoutGst;
+
+    const effectiveGoldRate = Math.max(
+      0,
+      withoutGst - (getGoldValuationDeductionPer10g() / 10)
+    );
+    const effectiveRateEl = document.getElementById("activeEffectiveGoldRate");
+    if (effectiveRateEl) effectiveRateEl.textContent = moneyRisk(effectiveGoldRate) + "/g";
+
+    // Keep active portfolio gold value synchronized with the latest rate.
+    refreshActivePortfolioTotals(withoutGst);
+
+    const withoutEl = document.getElementById("goldRateWithoutGst");
+    const withEl = document.getElementById("goldRateWithGst");
+    const statusEl = document.getElementById("goldRateStatus");
+    const updatedEl = document.getElementById("goldRateUpdated");
+
+    if (withoutEl) withoutEl.textContent = moneyRisk(withoutGst);
+    if (withEl) withEl.textContent = moneyRisk(withGst);
+    if (updatedEl) updatedEl.innerHTML = `<i class="bi bi-clock"></i> ${escapeHtml(updatedText)}`;
+
+    if (statusEl) {
+      statusEl.className = `gold-rate-status ${mode === "loading" ? "is-loading" : "is-live"}`;
+      statusEl.innerHTML = mode === "offline"
+        ? `<i class="bi bi-pc-display"></i> Offline test`
+        : `<i class="bi bi-circle-fill"></i> Live rate`;
+    }
+  }
+
+  async function fetchRiskGoldRate() {
+    if (RISK_OFFLINE_MODE) {
+      setGoldRateCard(
+        RISK_OFFLINE_GOLD_RATE,
+        "Offline test rate · ₹10,000/g",
+        "offline"
+      );
+      return RISK_OFFLINE_GOLD_RATE;
+    }
+
+    if (!RISK_GOLD_API_URL) {
+      throw new Error("Google Apps Script URL is not configured.");
+    }
+
+    const statusEl = document.getElementById("goldRateStatus");
+
+    if (statusEl) {
+      statusEl.className = "gold-rate-status is-loading";
+      statusEl.innerHTML = `<i class="bi bi-arrow-repeat"></i> Loading...`;
+    }
+
+    // Call the EXISTING Apps Script backend.
+    // Apps Script fetches the live rate server-side.
+    const url =
+      `${RISK_GOLD_API_URL}?action=getGoldRate&_=${Date.now()}`;
+
+    const response =
+      await fetch(
+        url,
+        {
+          method: "GET",
+          cache: "no-store"
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `Gold-rate backend returned ${response.status}.`
+      );
+    }
+
+    const data =
+      await response.json();
+
+    if (
+      !data ||
+      data.success !== true
+    ) {
+      throw new Error(
+        data && data.message
+          ? data.message
+          : "The live gold-rate service did not return a valid response."
+      );
+    }
+
+    const rate =
+      Number(
+        data.pricePerGram24k
+      );
+
+    if (
+      !Number.isFinite(rate) ||
+      rate <= 0
+    ) {
+      throw new Error(
+        "The live gold-rate response did not contain a valid 24K gram price."
+      );
+    }
+
+    let updatedText =
+      "Updated just now";
+
+    if (data.timestamp) {
+      const timestamp =
+        new Date(data.timestamp);
+
+      if (!Number.isNaN(timestamp.getTime())) {
+        updatedText =
+          `Updated ${timestamp.toLocaleString(
+            "en-IN",
+            {
+              dateStyle: "medium",
+              timeStyle: "short",
+              timeZone: "Asia/Kolkata"
+            }
+          )}`;
+      }
+    }
+
+    setGoldRateCard(
+      rate,
+      updatedText,
+      "live"
+    );
+
+    return rate;
+  }
+
+  let goldRateRefreshTimer = null;
+  let goldRateRefreshInFlight = false;
+
+  async function refreshDashboardGoldRate() {
+    if (goldRateRefreshInFlight) return;
+    goldRateRefreshInFlight = true;
+
+    try {
+      await fetchRiskGoldRate();
+    } catch (error) {
+      console.error("Dashboard gold-rate refresh failed:", error);
+      const statusEl = document.getElementById("goldRateStatus");
+      const updatedEl = document.getElementById("goldRateUpdated");
+
+      if (statusEl) {
+        statusEl.className = "gold-rate-status is-loading";
+        statusEl.innerHTML = `<i class="bi bi-exclamation-circle"></i> Rate unavailable`;
+      }
+
+      if (updatedEl) {
+        updatedEl.innerHTML = `<i class="bi bi-clock"></i> Unable to refresh`;
+      }
+    } finally {
+      goldRateRefreshInFlight = false;
+    }
+  }
+
+  function startDashboardGoldRateRefresh() {
+    if (goldRateRefreshTimer) {
+      clearInterval(goldRateRefreshTimer);
+    }
+
+    // Load immediately when the page opens.
+    refreshDashboardGoldRate();
+
+    // Refresh independently of Risk Analysis.
+    goldRateRefreshTimer = setInterval(
+      refreshDashboardGoldRate,
+      GOLD_RATE_REFRESH_MS
+    );
+  }
+
+  function riskLevel(coverage) {
+    if (!Number.isFinite(coverage)) return { key: "unknown", label: "Unknown" };
+    if (coverage < 75) return { key: "high", label: "High Risk" };
+    if (coverage < 100) return { key: "medium", label: "Medium Risk" };
+    return { key: "low", label: "Low Risk" };
+  }
+
+  function getOfflineRiskData() {
+    return {
+      values: [
+        headers,
+        ["9001", "01.06.26", "Offline Customer A", "Jagraon", "Ring", "15000/-", "4.5g", "2%", "", "", "", "", ""],
+        ["9002", "15.05.26", "Offline Customer B", "Dalla", "E.Rings", "30000/-", "2.2g", "2%", "", "5000/-(20.08.26)", "", "", ""],
+        ["9003", "20.04.26", "Offline Customer C", "Dhudike", "Ring", "8000/-", "3.0g", "2%", "", "", "", "", ""],
+        ["9004", "01.03.26", "Offline Taken Record", "Jagraon", "Chain", "25000/-", "5.0g", "2%", "", "", "", "", "08.09.26"]
+      ]
+    };
+  }
+
+  function getActiveRiskRecords(data) {
+    if (!data || !data.values) return [];
+
+    return data.values.slice(1)
+      .map(recordFromRow)
+      .filter(record => !hasTakenDate(record));
+  }
+
+  async function refreshActivePortfolioTotals(goldRateOverride = null) {
+    const withoutEl = document.getElementById("activeInvestedWithoutInterest");
+    const withEl = document.getElementById("activeInvestedWithInterest");
+    const goldValueEl = document.getElementById("activeTotalGoldValue");
+    const effectiveRateEl = document.getElementById("activeEffectiveGoldRate");
+    const goldValueMetaEl = document.getElementById("activeTotalGoldValueMeta");
+    const metaEl = document.getElementById("activePortfolioMeta");
+
+    try {
+      let data = cachedData;
+
+      if (!data || !data.values) {
+        const response = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}&_=${Date.now()}`,
+          { cache: "no-store" }
+        );
+        if (!response.ok) throw new Error("Unable to load active records.");
+        data = await response.json();
+        cachedData = data;
+      }
+
+      const activeRecords = getActiveRiskRecords(data);
+      const liveRate = Number(goldRateOverride ?? riskGoldRate) || 0;
+      const effectiveGoldRate = Math.max(
+        0,
+        liveRate - (getGoldValuationDeductionPer10g() / 10)
+      );
+
+      let totalWithoutInterest = 0;
+      let totalWithInterest = 0;
+      let totalGoldWeight = 0;
+
+      activeRecords.forEach(record => {
+        const calculation = calculateFull(record);
+        if (calculation) {
+          totalWithoutInterest += Number(calculation.principal) || 0;
+          totalWithInterest += Number(calculation.finalAmount) || 0;
+        }
+        totalGoldWeight += parseGoldWeight(record["ਖਾਲਸ ਸੋਨਾ"] || record["ਖਾਲਸ ਸੋਨਾ"]);
+      });
+
+      const totalGoldValue = totalGoldWeight * effectiveGoldRate;
+
+      if (withoutEl) withoutEl.textContent = moneyRisk(totalWithoutInterest);
+      if (withEl) withEl.textContent = moneyRisk(totalWithInterest);
+      if (effectiveRateEl) effectiveRateEl.textContent = effectiveGoldRate ? `${moneyRisk(effectiveGoldRate)}/g` : "—";
+      if (goldValueEl) goldValueEl.textContent = moneyRisk(totalGoldValue);
+      if (goldValueMetaEl) {
+        goldValueMetaEl.textContent = effectiveGoldRate
+          ? `${totalGoldWeight.toLocaleString("en-IN", { maximumFractionDigits: 3 })}g × ${moneyRisk(effectiveGoldRate)}/g`
+          : "Waiting for live rate";
+      }
+      if (metaEl) metaEl.textContent = `${activeRecords.length} active records · Taken excluded`;
+    } catch (error) {
+      console.error("Active portfolio totals error:", error);
+      if (withoutEl) withoutEl.textContent = "—";
+      if (withEl) withEl.textContent = "—";
+      if (effectiveRateEl) effectiveRateEl.textContent = "—";
+      if (goldValueEl) goldValueEl.textContent = "—";
+      if (goldValueMetaEl) goldValueMetaEl.textContent = "Unable to calculate";
+      if (metaEl) metaEl.textContent = "Unable to load totals";
+    }
+  }
+
+  function renderRiskPage() {
+    const tableBody = document.getElementById("riskTableBody");
+    const pagination = document.getElementById("riskPagination");
+    const pageNumbers = document.getElementById("riskPageNumbers");
+    const prevBtn = document.getElementById("riskPrevPageBtn");
+    const nextBtn = document.getElementById("riskNextPageBtn");
+
+    const totalPages = Math.max(1, Math.ceil(riskAnalyses.length / RISK_PAGE_SIZE));
+    riskCurrentPage = Math.min(Math.max(riskCurrentPage, 1), totalPages);
+
+    const start = (riskCurrentPage - 1) * RISK_PAGE_SIZE;
+    const pageItems = riskAnalyses.slice(start, start + RISK_PAGE_SIZE);
+
+    if (tableBody) {
+      tableBody.innerHTML = pageItems.length
+        ? pageItems.map(item => {
+            const record = item.record;
+            const name = record["Name"] || "Customer";
+            const address = record["City"] || "";
+            return `
+              <tr>
+                <td class="serial">${escapeHtml(record["Serial no."])}</td>
+                <td><div class="risk-customer">${escapeHtml(name)}<small>${escapeHtml(address)}</small></div></td>
+                <td class="money">${item.outstanding ? moneyRisk(item.outstanding) : "—"}</td>
+                <td>${item.weight ? `${item.weight.toLocaleString("en-IN", { maximumFractionDigits: 3 })}g` : "—"}</td>
+                <td class="money">${item.goldValue ? moneyRisk(item.goldValue) : "—"}</td>
+                <td><span class="risk-badge risk-${item.risk.key}"><i class="bi bi-circle-fill"></i>${item.risk.label}</span></td>
+              </tr>`;
+          }).join("")
+        : `<tr><td colspan="6" class="text-center py-4 text-muted">No active records found.</td></tr>`;
+    }
+
+    if (pagination) {
+      pagination.hidden = riskAnalyses.length <= RISK_PAGE_SIZE;
+    }
+
+    if (prevBtn) {
+      prevBtn.disabled = riskCurrentPage <= 1;
+    }
+
+    if (nextBtn) {
+      nextBtn.disabled = riskCurrentPage >= totalPages;
+    }
+
+    if (pageNumbers) {
+      if (totalPages <= 1) {
+        pageNumbers.innerHTML = "";
+      } else {
+        const pages = [];
+
+        // Keep pagination compact:
+        // first 3 pages + ellipsis + last page.
+        // When the user moves deeper into the list, show a small
+        // window around the current page instead of every page number.
+        let visiblePages = [];
+
+        if (totalPages <= 5) {
+          visiblePages = Array.from({ length: totalPages }, (_, i) => i + 1);
+        } else if (riskCurrentPage <= 3) {
+          visiblePages = [1, 2, 3, "...", totalPages];
+        } else if (riskCurrentPage >= totalPages - 2) {
+          visiblePages = [1, "...", totalPages - 2, totalPages - 1, totalPages];
+        } else {
+          visiblePages = [
+            1,
+            "...",
+            riskCurrentPage - 1,
+            riskCurrentPage,
+            riskCurrentPage + 1,
+            "...",
+            totalPages
+          ];
+        }
+
+        visiblePages.forEach(page => {
+          if (page === "...") {
+            pages.push('<span class="risk-page-ellipsis" aria-hidden="true">...</span>');
+            return;
+          }
+
+          pages.push(`
+            <button type="button"
+              class="risk-page-number${page === riskCurrentPage ? " is-active" : ""}"
+              data-risk-page="${page}"
+              aria-label="Go to page ${page}"
+              ${page === riskCurrentPage ? 'aria-current="page"' : ""}>
+              ${page}
+            </button>`);
+        });
+
+        pageNumbers.innerHTML = pages.join("");
+
+        pageNumbers.querySelectorAll("[data-risk-page]").forEach(button => {
+          button.addEventListener("click", () => {
+            riskCurrentPage = Number(button.getAttribute("data-risk-page")) || 1;
+            renderRiskPage();
+          });
+        });
+      }
+    }
+  }
+
+  async function runRiskAnalysis() {
+    const runButtons = [
+      document.getElementById("runRiskAnalysisBtn"),
+      document.getElementById("riskRerunBtn")
+    ].filter(Boolean);
+
+    runButtons.forEach(button => {
+      button.disabled = true;
+      const span = button.querySelector("span");
+      if (span) span.textContent = "Running...";
+    });
+
+    const resultsPanel = document.getElementById("riskResultsPanel");
+    const tableBody = document.getElementById("riskTableBody");
+
+    try {
+      let riskData = cachedData;
+
+      if (RISK_OFFLINE_MODE) {
+        riskData = getOfflineRiskData();
+      } else if (!riskData || !riskData.values) {
+        const response = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}&_=${Date.now()}`,
+          { cache: "no-store" }
+        );
+        if (!response.ok) throw new Error("Unable to load records from Google Sheets.");
+        riskData = await response.json();
+        cachedData = riskData;
+      }
+
+      const liveRate = await fetchRiskGoldRate();
+      const rate = Math.max(
+        0,
+        Number(liveRate) - (getGoldValuationDeductionPer10g() / 10)
+      );
+      const activeRecords = getActiveRiskRecords(riskData);
+
+      const analyses = activeRecords.map(record => {
+        const calculation = calculateFull(record);
+        const outstanding = calculation ? Number(calculation.finalAmount) || 0 : 0;
+        const weight = parseGoldWeight(record["खालस ਸੋਨਾ"] || record["ਖਾਲਸ ਸੋਨਾ"]);
+        const goldValue = weight * rate;
+        const coverage = outstanding > 0 ? (goldValue / outstanding) * 100 : NaN;
+        const risk = riskLevel(coverage);
+
+        return {
+          record,
+          outstanding,
+          weight,
+          goldValue,
+          coverage,
+          risk
+        };
+      });
+
+      analyses.sort((a, b) => {
+        const rank = { high: 0, medium: 1, low: 2, unknown: 3 };
+        return (rank[a.risk.key] - rank[b.risk.key]) || (b.outstanding - a.outstanding);
+      });
+
+      const counts = analyses.reduce((acc, item) => {
+        acc[item.risk.key] = (acc[item.risk.key] || 0) + 1;
+        return acc;
+      }, { high: 0, medium: 0, low: 0, unknown: 0 });
+
+      const totalOutstanding = analyses.reduce((sum, item) => sum + item.outstanding, 0);
+      const totalGoldValue = analyses.reduce((sum, item) => sum + item.goldValue, 0);
+
+      const summary = document.getElementById("riskSummaryGrid");
+      if (summary) {
+        summary.innerHTML = `
+          <div class="risk-summary-item"><span>Active Records</span><strong>${analyses.length}</strong></div>
+          <div class="risk-summary-item"><span>High Risk</span><strong>${counts.high}</strong></div>
+          <div class="risk-summary-item"><span>Total Outstanding</span><strong>${moneyRisk(totalOutstanding)}</strong></div>
+          <div class="risk-summary-item"><span>Total Gold Value</span><strong>${moneyRisk(totalGoldValue)}</strong></div>`;
+      }
+
+      riskAnalyses = analyses;
+      riskCurrentPage = 1;
+      renderRiskPage();
+
+      const meta = document.getElementById("riskResultsMeta");
+      if (meta) {
+        meta.textContent = `${analyses.length} active record${analyses.length === 1 ? "" : "s"} reviewed · Taken records excluded · adjusted 24K rate ${moneyRisk(rate)}/g after ₹3,000/10g deduction`;
+      }
+
+      const note = document.getElementById("riskResultsNote");
+      if (note) {
+        note.innerHTML = `<strong>Risk method:</strong> Gold value = pure gold weight × adjusted 24K rate (live rate less ₹3,000 per 10g). Risk is based on gold value compared with current outstanding: High Risk &lt; 75%, Medium Risk 75–99%, Low Risk ≥ 100%.`;
+      }
+
+      if (resultsPanel) {
+        resultsPanel.hidden = false;
+        resultsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } catch (error) {
+      console.error("Risk analysis error:", error);
+      alert(error.message || "Unable to run Risk Analysis.");
+    } finally {
+      runButtons.forEach(button => {
+        button.disabled = false;
+        const span = button.querySelector("span");
+        if (span) span.textContent = button.id === "riskRerunBtn" ? "Run Again" : "Run Risk Analysis";
+      });
+    }
+  }
+
+  // ============================================================
   // INITIALIZE
   // ============================================================
 
   function init() {
+    initGoldValuationSetting();
     const form =
       document.getElementById(
         "searchForm"
@@ -2144,6 +2700,51 @@ Thank you 🙏
         if (newRecordButton) newRecordButton.click();
       };
     }
+
+    const navRiskAnalysisBtn = document.getElementById("navRiskAnalysisBtn");
+    const runRiskAnalysisBtn = document.getElementById("runRiskAnalysisBtn");
+    const riskRerunBtn = document.getElementById("riskRerunBtn");
+    const riskPrevPageBtn = document.getElementById("riskPrevPageBtn");
+    const riskNextPageBtn = document.getElementById("riskNextPageBtn");
+
+    if (navRiskAnalysisBtn) {
+      navRiskAnalysisBtn.onclick = () => {
+        const section = document.getElementById("riskAnalysisSection");
+        if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+      };
+    }
+
+    if (runRiskAnalysisBtn) {
+      runRiskAnalysisBtn.onclick = runRiskAnalysis;
+    }
+
+    if (riskRerunBtn) {
+      riskRerunBtn.onclick = runRiskAnalysis;
+    }
+
+    if (riskPrevPageBtn) {
+      riskPrevPageBtn.onclick = () => {
+        if (riskCurrentPage > 1) {
+          riskCurrentPage--;
+          renderRiskPage();
+        }
+      };
+    }
+
+    if (riskNextPageBtn) {
+      riskNextPageBtn.onclick = () => {
+        const totalPages = Math.max(1, Math.ceil(riskAnalyses.length / RISK_PAGE_SIZE));
+        if (riskCurrentPage < totalPages) {
+          riskCurrentPage++;
+          renderRiskPage();
+        }
+      };
+    }
+
+    // Load portfolio data first so the live-rate request can reuse cachedData.
+    // Gold rate remains independent of Risk Analysis.
+    refreshActivePortfolioTotals();
+    startDashboardGoldRateRefresh();
 
     // ----------------------------------------------------------
     // CLOSE MODAL
