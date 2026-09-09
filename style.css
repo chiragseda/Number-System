@@ -1250,3 +1250,67 @@
     padding:0 8px;
   }
 }
+
+/* Final mobile overrides: keep dashboard cards readable on 390px phones. */
+@media (max-width: 576px){
+  .risk-dashboard-tools{
+    grid-template-columns:1fr !important;
+    gap:10px;
+  }
+  .gold-rate-card,
+  .gold-value-settings-card,
+  .active-portfolio-card,
+  .active-gold-value-card,
+  .risk-launch-card{
+    width:100%;
+    min-width:0;
+  }
+  .compact-card-head{
+    padding:10px 12px;
+    min-height:54px;
+  }
+  .gold-rate-values{
+    grid-template-columns:1fr !important;
+    padding:10px 13px 7px;
+  }
+  .gold-rate-value-box,
+  .gold-rate-value-box:first-child,
+  .gold-rate-value-box:last-child{
+    padding:7px 0;
+  }
+  .gold-rate-divider{
+    width:100%;
+    height:1px;
+  }
+  .portfolio-total-row{
+    padding:10px 12px;
+  }
+  .portfolio-total-row strong{
+    font-size:16px;
+  }
+  .gold-value-metric{padding:9px 12px 6px}
+  .gold-value-total{margin:5px 9px 9px;padding:8px 9px}
+  .risk-launch-card{
+    grid-column:auto !important;
+    padding:13px;
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:12px;
+  }
+  .risk-launch-copy{gap:9px}
+  .risk-launch-card h2{font-size:19px}
+  .risk-launch-card p{font-size:11px;line-height:1.4}
+  .risk-run-btn{width:100%;max-width:none;min-height:44px}
+  .risk-summary-grid{grid-template-columns:1fr 1fr}
+}
+
+
+@media (max-width: 767.98px){
+  .brand-panel{
+    display:none !important;
+  }
+  .search-panel{
+    margin-bottom:0;
+  }
+}
