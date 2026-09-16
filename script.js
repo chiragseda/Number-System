@@ -1202,6 +1202,19 @@ Thank you 🙏
     if (element) element.textContent = value == null ? "" : String(value);
   }
 
+  // Existing records can come back from Google Sheets with the
+  // weight unit already attached (for example, "3.4g"). The
+  // print CSS adds the unit visually, so remove any stored unit
+  // first to prevent output such as "3.4gg".
+  function normalizePrintWeight(value) {
+    const text = String(value == null ? "" : value).trim();
+    if (!text) return "";
+
+    return text
+      .replace(/\s*(?:grams?|gm|g)\s*$/i, "")
+      .trim();
+  }
+
   function printExistingRecord(record) {
     const amount = parseAmount(record["Amount"]);
     const date = formatDate(parseDate(record["Date"])) || String(record["Date"] || "");
@@ -1209,7 +1222,7 @@ Thank you 🙏
     const values = {
       Serial: record["Serial no."], Phone: record["Ph. No"], Name: record["Name"],
       Address: record["City"], Item: record["Item"], EstimatedWeight: "",
-      GoldWeight: record["खਾਲਸ ਸੋਨਾ"] || record["ਖਾਲਸ ਸੋਨਾ"] || "", Amount: amount ? amount.toLocaleString("en-IN") + "/-" : "", Date: date, AmountWords: amountWords
+      GoldWeight: normalizePrintWeight(record["खਾਲਸ ਸੋਨਾ"] || record["ਖਾਲਸ ਸੋਨਾ"] || ""), Amount: amount ? amount.toLocaleString("en-IN") + "/-" : "", Date: date, AmountWords: amountWords
     };
 
     ["Customer", "Office"].forEach(copy => {
