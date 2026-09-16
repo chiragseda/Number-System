@@ -113,7 +113,7 @@
      ========================================================== */
 
   .office-slip {
-    border-left: 0.3mm dashed #888;
+    border-left: 0 !important;
   }
 
 
@@ -392,6 +392,16 @@
      AMOUNT IN WORDS
      ========================================================== */
 
+
+  #printDateCustomer,
+  #printDateOffice {
+    font-size: 10.2pt !important;
+    font-weight: 900 !important;
+    white-space: nowrap !important;
+    margin-left: 0 !important;
+    justify-self: end !important;
+  }
+
   .slip-amount-words {
 
     width: 100%;
@@ -408,10 +418,7 @@
 
     border-bottom: 0.2mm dotted #999;
 
-    font-family:
-      Arial,
-      "Noto Sans Gurmukhi",
-      sans-serif;
+    font-family: inherit;
 
     font-size: 7.8pt;
 
@@ -1312,5 +1319,321 @@
   }
   .search-panel{
     margin-bottom:0;
+  }
+}
+
+/* ============================================================
+   HALF-A4 RECEIPT — READABILITY & ALIGNMENT ONLY
+   Existing slip text/content is intentionally untouched.
+   The print area remains the TOP HALF of an A4 sheet, with
+   Customer Copy + Office Copy side-by-side. Bottom half stays free.
+   ============================================================ */
+@media print {
+  .print-area {
+    width: 210mm !important;
+    height: 148.5mm !important;
+    max-height: 148.5mm !important;
+    overflow: hidden !important;
+  }
+
+  .print-half {
+    width: 210mm !important;
+    height: 148.5mm !important;
+    max-height: 148.5mm !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+  }
+
+  .slip {
+    width: 105mm !important;
+    height: 148.5mm !important;
+    max-height: 148.5mm !important;
+    padding: 4.2mm 6.2mm 3.5mm !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+    font-family: "Noto Sans Gurmukhi", "Noto Sans", "Raavi", "Arial Unicode MS", Arial, sans-serif;
+    line-height: 1.18 !important;
+  }
+
+  /* No vertical divider between the two half-A4 slips. */
+  .office-slip,
+  .customer-slip {
+    border-left: 0 !important;
+    border-right: 0 !important;
+  }
+
+  .customer-slip::before,
+  .slip-copy-title {
+    margin: 0 auto 2.2mm !important;
+    padding: 1.1mm 4.5mm !important;
+    font-size: 9.5pt !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    letter-spacing: 0.2px !important;
+  }
+
+  .slip-top {
+    min-height: 8.2mm !important;
+    padding: 0 0 1.7mm !important;
+    font-size: 9.6pt !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
+  }
+
+  .slip-top div {
+    white-space: nowrap !important;
+  }
+
+  .slip-line {
+    min-height: 8.6mm !important;
+    padding: 0.7mm 0 !important;
+    font-size: 9.7pt !important;
+    font-weight: 650 !important;
+    line-height: 1.16 !important;
+  }
+
+  .slip-line span {
+    margin-left: 1.6mm !important;
+    font-size: 10.2pt !important;
+    font-weight: 850 !important;
+  }
+
+  /* Customer name: give the value enough room without changing its text. */
+  .slip-line:has(#printNameCustomer),
+  .slip-line:has(#printNameOffice) {
+    min-height: 11.5mm !important;
+    padding: 1mm 0 !important;
+    font-size: 9.8pt !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    align-items: flex-start !important;
+  }
+
+  .slip-line:has(#printNameCustomer) span,
+  .slip-line:has(#printNameOffice) span {
+    font-size: 10.4pt !important;
+    font-weight: 900 !important;
+    line-height: 1.18 !important;
+  }
+
+  .slip-line:has(#printAddressCustomer),
+  .slip-line:has(#printAddressOffice) {
+    min-height: 8.7mm !important;
+    font-size: 9.7pt !important;
+    font-weight: 700 !important;
+  }
+
+  .slip-line:has(#printItemCustomer),
+  .slip-line:has(#printItemOffice) {
+    min-height: 8.7mm !important;
+    font-size: 9.8pt !important;
+    font-weight: 700 !important;
+  }
+
+  .slip-line:has(#printItemCustomer) span,
+  .slip-line:has(#printItemOffice) span {
+    font-size: 10.3pt !important;
+    font-weight: 900 !important;
+  }
+
+  .slip-line:has(#printEstimatedWeightCustomer),
+  .slip-line:has(#printEstimatedWeightOffice) {
+    min-height: 11.2mm !important;
+    display: grid !important;
+    grid-template-columns: max-content minmax(0,1fr) max-content minmax(0,1fr) !important;
+    align-items: center !important;
+    column-gap: 1.4mm !important;
+    font-size: 8.5pt !important;
+    line-height: 1.08 !important;
+    white-space: nowrap !important;
+  }
+
+  .slip-line:has(#printEstimatedWeightCustomer) span,
+  .slip-line:has(#printEstimatedWeightOffice) span {
+    margin: 0 !important;
+    min-width: 0 !important;
+    font-size: 9.7pt !important;
+    font-weight: 900 !important;
+    justify-self: start !important;
+  }
+
+  #printGoldWeightCustomer,
+  #printGoldWeightOffice {
+    transform: translateX(3.2mm);
+  }
+
+  #printEstimatedWeightCustomer::after,
+  #printEstimatedWeightOffice::after,
+  #printGoldWeightCustomer::after,
+  #printGoldWeightOffice::after {
+    margin-left: 0.35mm !important;
+    font-weight: 900 !important;
+  }
+
+  .slip-line:has(#printAmountCustomer),
+  .slip-line:has(#printAmountOffice) {
+    min-height: 11.5mm !important;
+    grid-template-columns: max-content max-content minmax(4mm,1fr) max-content max-content !important;
+    column-gap: 1.4mm !important;
+    font-size: 9pt !important;
+    line-height: 1.08 !important;
+    align-items: center !important;
+  }
+
+  .slip-line:has(#printAmountCustomer) span,
+  .slip-line:has(#printAmountOffice) span {
+    margin: 0 !important;
+    font-size: 10.2pt !important;
+    font-weight: 900 !important;
+  }
+
+  .slip-amount-words {
+    min-height: 9.3mm !important;
+    padding: 0.8mm 0 !important;
+    font-size: 9.3pt !important;
+    font-weight: 900 !important;
+    line-height: 1.12 !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  .slip-amount-words span {
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+    font-weight: 900 !important;
+  }
+
+  .slip-bottom-text {
+    min-height: 8.6mm !important;
+    margin: 1.1mm 0 0 !important;
+    padding: 0.8mm 0 !important;
+    font-size: 9.7pt !important;
+    font-weight: 750 !important;
+    line-height: 1.1 !important;
+  }
+
+  .slip-footer {
+    margin: 2.1mm 0 0 !important;
+    font-size: 12.8pt !important;
+    font-weight: 950 !important;
+    line-height: 1.05 !important;
+  }
+
+  .slip-footer::before,
+  .slip-footer::after {
+    font-size: 5.2pt !important;
+    margin-top: 0.8mm !important;
+    margin-bottom: 0.8mm !important;
+  }
+
+  .slip-warning {
+    margin: 1.1mm 0 0 !important;
+    padding: 0 0.8mm !important;
+    font-size: 8.1pt !important;
+    font-weight: 550 !important;
+    line-height: 1.28 !important;
+  }
+}
+
+/* Explicit print grouping for the amount/date row. Existing text is unchanged. */
+@media print {
+  .slip-amount-date-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8mm !important;
+    white-space: nowrap !important;
+  }
+
+  .slip-amount-group,
+  .slip-date-group {
+    display: inline-flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+    gap: 2.2mm !important;
+  }
+
+  .slip-amount-group {
+    justify-content: flex-start !important;
+    flex: 1 1 auto !important;
+  }
+
+  .slip-date-group {
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+  }
+
+  .slip-amount-group > span,
+  .slip-date-group > span {
+    margin-left: 0 !important;
+    font-size: 10.2pt !important;
+    font-weight: 900 !important;
+  }
+}
+
+
+/* Final print alignment/font consistency — does not alter slip text. */
+@media print {
+  .print-half .slip {
+    font-family: "Noto Sans Gurmukhi", "Noto Sans", "Raavi", "Arial Unicode MS", Arial, sans-serif !important;
+    font-variant-ligatures: none !important;
+  }
+
+  .print-half .slip-top {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .print-half .slip-top > div {
+    display: flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+  }
+
+  .print-half .slip-top > div:last-child {
+    justify-content: flex-end !important;
+    text-align: right !important;
+  }
+
+  .print-half .slip-line:has(#printNameCustomer),
+  .print-half .slip-line:has(#printNameOffice),
+  .print-half .slip-line:has(#printAddressCustomer),
+  .print-half .slip-line:has(#printAddressOffice),
+  .print-half .slip-line:has(#printItemCustomer),
+  .print-half .slip-line:has(#printItemOffice) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    box-sizing: border-box !important;
+    padding-left: 2.5mm !important;
+    padding-right: 2.5mm !important;
+  }
+
+  .print-half .slip-line:has(#printNameCustomer) > span,
+  .print-half .slip-line:has(#printNameOffice) > span,
+  .print-half .slip-line:has(#printAddressCustomer) > span,
+  .print-half .slip-line:has(#printAddressOffice) > span,
+  .print-half .slip-line:has(#printItemCustomer) > span,
+  .print-half .slip-line:has(#printItemOffice) > span {
+    margin-left: 1.6mm !important;
+    line-height: 1.12 !important;
+  }
+
+  .print-half .slip-line:has(#printEstimatedWeightCustomer),
+  .print-half .slip-line:has(#printEstimatedWeightOffice) {
+    grid-template-columns: max-content minmax(18mm, 1fr) max-content minmax(18mm, 1fr) !important;
+    column-gap: 2.2mm !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 }
