@@ -710,6 +710,40 @@ Thank you 🙏
     return String(value);
   }
 
+  async function verifyTakenOnSheet(serialNo, maxAttempts = 3) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        if (attempt > 1) {
+          await new Promise(resolve => setTimeout(resolve, 600));
+        }
+
+        const response = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}&_=${Date.now()}`,
+          { cache: "no-store" }
+        );
+
+        if (!response.ok) continue;
+
+        const data = await response.json();
+        const rows = data && data.values ? data.values.slice(1) : [];
+        const row = rows.find(item =>
+          String(item[0] || "").trim() === String(serialNo || "").trim()
+        );
+
+        if (row) {
+          const taken = String(row[12] || "").trim();
+          if (taken && taken !== "-" && taken !== "—") {
+            return taken;
+          }
+        }
+      } catch (error) {
+        console.warn(`Taken verification attempt ${attempt} failed:`, error);
+      }
+    }
+
+    return null;
+  }
+
   async function markRecordAsTaken(record, button) {
     if (!record || !record["Serial no."]) {
       alert("Invalid record.");
@@ -774,17 +808,45 @@ Thank you 🙏
         }
       );
 
-      const data =
-        await response.json();
+      let data = null;
+      let responseWasValid = false;
+
+      try {
+        const responseText = await response.text();
+        data = JSON.parse(responseText);
+        responseWasValid = true;
+      } catch (parseError) {
+        console.warn(
+          "Taken response was not valid JSON. Verifying the Sheet instead."
+        );
+      }
 
       if (
-        !response.ok ||
-        !data.success
+        responseWasValid &&
+        response.ok &&
+        data &&
+        data.success
       ) {
-        throw new Error(
-          data.message ||
-          "Unable to update the record."
-        );
+        // Normal successful response.
+      } else {
+        const verifiedTakenDate =
+          await verifyTakenOnSheet(
+            record["Serial no."],
+            3
+          );
+
+        if (!verifiedTakenDate) {
+          throw new Error(
+            data && data.message
+              ? data.message
+              : "The server response was unclear and the Taken update could not be verified in Google Sheets."
+          );
+        }
+
+        data = {
+          success: true,
+          takenDate: verifiedTakenDate
+        };
       }
 
       const takenDate =

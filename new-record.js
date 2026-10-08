@@ -1279,11 +1279,37 @@
         !data.success
       ) {
 
-        throw new Error(
-          data && data.message
-            ? data.message
-            : "Unable to save the new record."
-        );
+        // A JSON error response is also ambiguous for Google Apps Script:
+        // the write may have completed before the response was generated.
+        // Verify the serial before telling the user that the save failed.
+        const verified =
+          await verifySavedRecord(
+            serial
+          );
+
+        if (
+          verified &&
+          verified.success &&
+          verified.exists
+        ) {
+
+          data = {
+            success: true,
+            serialNo: serial,
+            row: verified.row,
+            message:
+              "Record was saved successfully."
+          };
+
+        } else {
+
+          throw new Error(
+            data && data.message
+              ? data.message
+              : "Unable to save the new record."
+          );
+
+        }
 
       }
 
@@ -1505,76 +1531,93 @@
   // It only checks whether the serial already exists.
   // ==========================================================
 
-  async function verifySavedRecord(serial) {
+  async function verifySavedRecord(serial, maxAttempts = 3) {
 
-    try {
+    let lastResult = {
+      success: false,
+      exists: false
+    };
 
-      const response =
-        await fetch(
-          NEW_RECORD_API_URL,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "text/plain;charset=utf-8"
-            },
-
-            body: JSON.stringify({
-              action:
-                "verifyRecord",
-              serialNo:
-                String(serial || "").trim()
-            })
-          }
-        );
-
-
-      const responseText =
-        await response.text();
-
-
-      let data;
+    for (
+      let attempt = 1;
+      attempt <= maxAttempts;
+      attempt++
+    ) {
 
       try {
 
-        data =
-          JSON.parse(
-            responseText
+        // Give Google Apps Script a moment to finish committing the row
+        // before checking it. This is verification only; we NEVER retry
+        // the original addNewRecord request.
+        if (attempt > 1) {
+          await new Promise(resolve =>
+            setTimeout(resolve, 600)
+          );
+        }
+
+        const response =
+          await fetch(
+            NEW_RECORD_API_URL,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "text/plain;charset=utf-8"
+              },
+
+              body: JSON.stringify({
+                action:
+                  "verifyRecord",
+                serialNo:
+                  String(serial || "").trim()
+              })
+            }
           );
 
-      } catch (parseError) {
+        const responseText =
+          await response.text();
 
-        console.error(
-          "Verify response was not valid JSON:",
-          responseText
-            ? responseText.substring(0, 200)
-            : "(empty response)"
+        let data;
+
+        try {
+
+          data =
+            JSON.parse(
+              responseText
+            );
+
+        } catch (parseError) {
+
+          console.warn(
+            `Verify attempt ${attempt} returned invalid JSON:`,
+            responseText
+              ? responseText.substring(0, 200)
+              : "(empty response)"
+          );
+
+          continue;
+
+        }
+
+        if (data && data.success && data.exists) {
+          return data;
+        }
+
+        lastResult = data || lastResult;
+
+      } catch (error) {
+
+        console.warn(
+          `Unable to verify saved record (attempt ${attempt}):`,
+          error
         );
-
-        return {
-          success: false,
-          exists: false
-        };
 
       }
 
-
-      return data;
-
-    } catch (error) {
-
-      console.error(
-        "Unable to verify saved record:",
-        error
-      );
-
-      return {
-        success: false,
-        exists: false
-      };
-
     }
+
+    return lastResult;
 
   }
 
